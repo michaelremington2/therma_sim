@@ -5,6 +5,7 @@ import rasterio.mask
 import matplotlib.pyplot as plt
 from rasterio.plot import show
 
+
 class GetThermalData(object):
     def __init__(self):
         pass
