@@ -14,7 +14,7 @@ from scipy.spatial import Voronoi
 # https://gis.stackexchange.com/questions/317391/python-extract-raster-values-at-point-locations sample points form a raster
 
 
-class Landscape_From_Polygon(object):
+class Landscape_Attributes_From_Polygon(object):
     '''
     Args:
         - Landscape polygon should be a .shp file
@@ -98,7 +98,7 @@ class Simulate_Landscape(object):
 
 if __name__ ==  "__main__":
     landscape_polygon_fp = '/home/mremington/Documents/therma_sim/Raster-Layers/landscape-polygons/canada/Canada.shp'
-    ls = Landscape_From_Polygon(landscape_polygon_fp)
+    ls = Landscape_Attributes_From_Polygon(landscape_polygon_fp)
     #print(ls.ls_df.head())
     #print(ls.Landscape_polygon)
     ls.plot_points()
