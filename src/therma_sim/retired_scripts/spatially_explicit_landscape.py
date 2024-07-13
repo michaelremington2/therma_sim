@@ -106,6 +106,7 @@ class Simulate_Landscape(object):
         self.width = width
         self.size_of_node = size_of_node
         self._earths_radius = 6371000.0 # Radius of the Earth in meters
+        self.set_min_max_lat_lng_boundaries()
 
     def generate_global_landscape_network_object(self, directed_graph=False):
         if directed_graph:
@@ -130,15 +131,33 @@ class Simulate_Landscape(object):
 
         return new_lat, new_lng
 
-    def simulate_landscape_topography(self):
-        lat_max = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
+    def haversine_distance(lat1, lon1, lat2, lon2):
+        """
+        Calculate the great circle distance in meters between two points
+        on the earth (specified in radians).
+        """
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = (math.sin(dlat / 2) ** 2 +
+             math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) *
+             math.sin(dlon / 2) ** 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = self._earths_radius * c
+
+        return distance
+
+    def set_min_max_lat_lng_boundaries(self):
+        self.lat_max = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
                                              distance_meters = self.width/2, bearing_radians=0) #0 for west
-        lat_min = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
+        self.lat_min = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
                                              distance_meters = self.width/2, bearing_radians=math.pi) #pi for east
-        lng_max = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
+        self.lng_max = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
                                              distance_meters = self.length/2, bearing_radians=math.pi/2) #pi/2 for north
-        lng_min = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
+        self.lng_min = self.calculate_new_lat_lng(initial_lat = self.centroid.y, initial_lng = self.centroid.x,
                                              distance_meters = self.length/2, bearing_radians=(3*math.pi)/2) #3pi/2 for south
+
+    def simulate_landscape_topography(self):
+        pass
 
 
 
