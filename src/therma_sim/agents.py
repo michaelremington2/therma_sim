@@ -15,6 +15,9 @@ class Kangaroo_Rat(mesa.Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
 
+    def step(self):
+        pass
+
 class Rattlesnake(mesa.Agent):
     '''
     Agent Class for rattlesnake predator agents.
@@ -22,3 +25,6 @@ class Rattlesnake(mesa.Agent):
     '''
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
+
+    def step(self):
+        pass
