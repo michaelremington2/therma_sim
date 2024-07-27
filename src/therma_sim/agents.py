@@ -14,6 +14,8 @@ class Kangaroo_Rat(mesa.Agent):
     '''
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
+        # Agent is actively foraging
+        self.active = True
 
     def step(self):
         pass
@@ -23,6 +25,16 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
+
+        # Agent is actively foraging
+        self.active = True
+
+    def step(self):
+        pass
+
+class SeedPatch(mesa.agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
 

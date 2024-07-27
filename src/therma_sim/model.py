@@ -14,28 +14,28 @@ class ThermaSim(mesa.Model):
     def __init__(self, initial_agents_dictionary,
                  thermal_profile_csv_fp, width=50, height=50,
                  torus=False, moore=False):
-        # Initialize  attributes
-        self.width = width
-        self.height = height
+
         self.initial_agents_dictionary = initial_agents_dictionary
         self.thermal_profile_csv_fp = thermal_profile_csv_fp
         # Population Parameters
         self.running = True
-
-
-        # Intialize mesa grid class (Check Mesa website for different types ofr grids)
-        self.grid = mesa.space.MultiGrid(self.width, self.height, torus=torus)
         
         # Schedular 
         # Random activation, random by type Simultanious, staged
         self.schedule = mesa.time.RandomActivationByType(self)
 
-    def make_landscape(self):
-        self.landscape = landscape.Landscape(thermal_profile_csv_fp, width=width, height=False, torus=False)
+        ## Make Initial Landscape
+        self.landscape = self.make_landscape(thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
+
+    def make_landscape(self, thermal_profile_csv_fp, width, height, torus):
+        return landscape.Landscape(thermal_profile_csv_fp, width=width, height=height, torus=torus)
+    
+    def step(self):
+        pass
 
     def run_model(self, step_count=1000):
         for i in range(step_count):
-            model.step()
+            self.step()
 
 if __name__ ==  "__main__":
     pass
