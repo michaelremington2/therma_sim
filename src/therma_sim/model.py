@@ -17,7 +17,8 @@ class ThermaSim(mesa.Model):
 
         self.initial_agents_dictionary = initial_agents_dictionary
         self.thermal_profile_csv_fp = thermal_profile_csv_fp
-        # Population Parameters
+        # 
+        self.step_id = 0
         self.running = True
         
         # Schedular 
@@ -25,13 +26,14 @@ class ThermaSim(mesa.Model):
         self.schedule = mesa.time.RandomActivationByType(self)
 
         ## Make Initial Landscape
-        self.landscape = self.make_landscape(thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
+        self.landscape = self.make_landscape(model=self, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
 
-    def make_landscape(self, thermal_profile_csv_fp, width, height, torus):
-        return landscape.Landscape(thermal_profile_csv_fp, width=width, height=height, torus=torus)
+    def make_landscape(self, model, thermal_profile_csv_fp, width, height, torus):
+        return landscape.Landscape(model = model, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
     
     def step(self):
-        pass
+        self.schedule.step()
+        self.step_id += 1  # Increment the step counter
 
     def run_model(self, step_count=1000):
         for i in range(step_count):
