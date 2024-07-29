@@ -29,15 +29,29 @@ class ThermaSim(mesa.Model):
         self.landscape = self.make_landscape(model=self, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
 
     def make_landscape(self, model, thermal_profile_csv_fp, width, height, torus):
+        '''
+        Helper function for intializing the landscape class
+        '''
         return landscape.Landscape(model = model, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
     
+    def set_landscape_temperatures(self):
+        '''
+        Helper function for setting and resetting the the thermal temperatures in the landscape
+        '''
+    
     def step(self):
+        '''
+        Main model step function used to run one step of the model.
+        '''
+        self.landscape.set_landscape_temperatures(step_id=self.step_id)
         self.schedule.step()
         self.step_id += 1  # Increment the step counter
 
     def run_model(self, step_count=1000):
         for i in range(step_count):
             self.step()
+            print(self.landscape.burrow_temp.get_cell((0,0)))
+            break
 
 if __name__ ==  "__main__":
     pass
