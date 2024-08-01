@@ -6,8 +6,8 @@ from model import ThermaSim
 thermal_data_profile_fp = 'Data/Canada_data.csv'
 torus = False
 moore = False
-width=2
-height=2
+width=10
+height=10
 popualation_initial_conditions = {'Kangaroo_rat': 200,
                                   'Snake': 100}
 

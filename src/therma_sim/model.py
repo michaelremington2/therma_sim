@@ -39,7 +39,7 @@ class ThermaSim(mesa.Model):
         Main model step function used to run one step of the model.
         '''
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
-        self.landscape.print_property_layer('Burrow_Temp')
+        self.landscape.visualize_property_layer('Burrow_Temp')
         self.schedule.step()
         self.step_id += 1  # Increment the step counter
 
