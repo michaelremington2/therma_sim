@@ -8,8 +8,8 @@ torus = False
 moore = False
 width=10
 height=10
-popualation_initial_conditions = {'Kangaroo_rat': 200,
-                                  'Snake': 100}
+popualation_initial_conditions = {'KangarooRat': 20,
+                                  'Rattlesnake': 10}
 
 
 if __name__ ==  "__main__":

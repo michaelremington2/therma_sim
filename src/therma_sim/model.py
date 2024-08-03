@@ -6,6 +6,9 @@ import math
 import networkx as nx
 import pandas as pd
 import landscape
+import agents 
+import warnings
+warnings.filterwarnings("ignore")
 
 class ThermaSim(mesa.Model):
     '''
@@ -17,6 +20,7 @@ class ThermaSim(mesa.Model):
 
         self.initial_agents_dictionary = initial_agents_dictionary
         self.thermal_profile_csv_fp = thermal_profile_csv_fp
+        self.moore = moore
         # 
         self.step_id = 0
         self.running = True
@@ -27,6 +31,8 @@ class ThermaSim(mesa.Model):
 
         ## Make Initial Landscape
         self.landscape = self.make_landscape(model=self, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
+        ## Intialize agents
+        self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
 
     def make_landscape(self, model, thermal_profile_csv_fp, width, height, torus):
         '''
@@ -34,12 +40,44 @@ class ThermaSim(mesa.Model):
         '''
         return landscape.Landscape(model = model, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)   
     
+    def initialize_populations(self, initial_agent_dictionary):
+        agent_id = 0
+        for species, initial_population_size in initial_agent_dictionary.items():
+            for i in range(int(initial_population_size)):
+                x = self.random.randrange(self.landscape.width)
+                y = self.random.randrange(self.landscape.height)
+                pos = (x,y)
+                print(pos,agent_id)
+                if species=='KangarooRat':
+                    # Create agent
+                    krat = agents.KangarooRat(unique_id = agent_id, 
+                                                model = self,
+                                                pos = pos,
+                                                moore = self.moore)
+                    # place agent
+                    self.landscape.place_agent(krat, pos)
+                    self.schedule.add(krat)
+                    agent_id += 1
+                elif species=='Rattlesnake':
+                    # Create agent
+                    snake = agents.Rattlesnake(unique_id = agent_id, 
+                                                model = self,
+                                                pos = pos,
+                                                moore = self.moore)
+                    # place agent
+                    self.landscape.place_agent(snake, pos)
+                    self.schedule.add(snake)
+                    agent_id += 1
+                else:
+                    raise ValueError(f'Class for species: {species} DNE')
+
+
     def step(self):
         '''
         Main model step function used to run one step of the model.
         '''
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
-        self.landscape.visualize_property_layer('Burrow_Temp')
+        #self.landscape.visualize_property_layer('Burrow_Temp')
         self.schedule.step()
         self.step_id += 1  # Increment the step counter
 
