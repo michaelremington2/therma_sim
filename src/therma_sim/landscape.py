@@ -19,8 +19,14 @@ class Landscape(mesa.space.MultiGrid):
         self.add_property_layer(self.open_temp)
         self.shrub_temp = mesa.space.PropertyLayer("Shrub_Temp", self.width, self.height, default_value=0.0)
         self.add_property_layer(self.shrub_temp)
-        self.microhabitat_profile = mesa.space.PropertyLayer("Microhabitat_Profile", self.width, self.height, default_value=0.0)
-        self.add_property_layer(self.microhabitat_profile)
+        self.open_microhabitat = mesa.space.PropertyLayer("Open_Microhabitat", self.width, self.height, default_value=0.0)
+        self.add_property_layer(self.open_microhabitat)
+        self.shrub_microhabitat = mesa.space.PropertyLayer("Shrub_Microhabitat", self.width, self.height, default_value=0.0)
+        self.add_property_layer(self.shrub_microhabitat)
+        # set microhabitat profile
+        self.set_microhabitat_profile()
+        print(self.shrub_microhabitat)
+
 
     def get_property_layer(self, property_name):
         '''
@@ -32,11 +38,12 @@ class Landscape(mesa.space.MultiGrid):
             return self.open_temp
         elif property_name == "Burrow_Temp":
             return self.burrow_temp
-        elif property_name == "Microhabitat_Profile":
-            return self.microhabitat_profile
+        elif property_name == "Open_Microhabitat":
+            return self.open_microhabitat
+        elif property_name == "Shrub_Microhabitat":
+            return self.shrub_microhabitat
         else:
-            print(f"Unknown layer: {property_name}")
-            return
+            raise ValueError(f"Unknown layer: {property_name}")
 
     def get_property_attribute(self, property_name, pos):
         '''
@@ -77,6 +84,18 @@ class Landscape(mesa.space.MultiGrid):
             burrow_temp = np.random.normal(burrow_emp_mean, burrow_emp_std, 1)[0]
             self.set_property_attribute('Burrow_Temp', pos, burrow_temp)
 
+    def set_microhabitat_profile(self):
+        '''
+        Helper function used in the init function to set the microhabitat percentages of the cell
+        '''
+        for cell in self.coord_iter():
+            pos = cell[1]
+            open_percent = np.random.uniform(0,1)
+            shrub_percent = 1-open_percent
+            self.set_property_attribute("Open_Microhabitat", pos, open_percent)
+            self.set_property_attribute("Shrub_Microhabitat", pos, shrub_percent)
+
+
     def print_property_layer(self, property_name):
         '''
         Helper function for printing details of various property layers 
@@ -90,7 +109,7 @@ class Landscape(mesa.space.MultiGrid):
 
     def visualize_property_layer(self, property_name):
         '''
-        Function to visualize a property layer as a heat map
+        Utility Function to visualize a property layer as a heat map
         '''
         layer = self.get_property_layer(property_name=property_name)
         data = layer.data
@@ -103,4 +122,13 @@ class Landscape(mesa.space.MultiGrid):
         plt.ylabel('Y Coordinate')
         plt.gca().invert_yaxis()
         plt.show()
+
+    def check_landscape(self):
+        '''
+        Utility function for checking that agents are being placed and moved aroundd the landscape
+        '''
+        for cell in self.coord_iter():
+            print(f"Cell id {cell[1]} contents:")
+            print(self.get_cell_list_contents(cell[1]))
+
 

@@ -6,10 +6,10 @@ from model import ThermaSim
 thermal_data_profile_fp = 'Data/Canada_data.csv'
 torus = False
 moore = False
-width=10
-height=10
-popualation_initial_conditions = {'KangarooRat': 20,
-                                  'Rattlesnake': 10}
+width=3
+height=3
+popualation_initial_conditions = {'KangarooRat': 0,
+                                  'Rattlesnake': 0}
 
 
 if __name__ ==  "__main__":
