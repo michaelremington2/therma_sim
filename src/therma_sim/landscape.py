@@ -25,7 +25,7 @@ class Landscape(mesa.space.MultiGrid):
         self.add_property_layer(self.shrub_microhabitat)
         # set microhabitat profile
         self.set_microhabitat_profile()
-        print(self.shrub_microhabitat)
+
 
 
     def get_property_layer(self, property_name):
