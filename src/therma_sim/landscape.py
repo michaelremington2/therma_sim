@@ -26,8 +26,6 @@ class Landscape(mesa.space.MultiGrid):
         # set microhabitat profile
         self.set_microhabitat_profile()
 
-
-
     def get_property_layer(self, property_name):
         '''
         Helper function for querying environemntal property layers
@@ -57,9 +55,8 @@ class Landscape(mesa.space.MultiGrid):
         '''
         Helper function for setting property attributes in the landscape
         '''
-        x, y = pos
         layer = self.get_property_layer(property_name=property_name)
-        layer.set_cell((x, y), property_value)
+        layer.set_cell(pos, property_value)
 
     def set_landscape_temperatures(self, step_id):
         '''
@@ -71,11 +68,15 @@ class Landscape(mesa.space.MultiGrid):
         open_emp_std = self.thermal_profile['Open_stddev_Temperature'].iloc[step_id]
         burrow_emp_mean = self.thermal_profile['Burrow_mean_Temperature'].iloc[step_id]
         burrow_emp_std = self.thermal_profile['Burrow_stddev_Temperature'].iloc[step_id]
+        #print('mean ', shrub_emp_mean)
+        #print('std ', shrub_emp_std)
+        # Property values arent setting right or might be rounding weirdly
 
         for cell in self.coord_iter():
             pos = cell[1]
             # Shrub
             shrub_temp = np.random.normal(shrub_emp_mean, shrub_emp_std, 1)[0]
+            #print('sim', shrub_temp)
             self.set_property_attribute('Shrub_Temp', pos, shrub_temp)
             # Open
             open_temp = np.random.normal(open_emp_mean, open_emp_std, 1)[0]
@@ -95,6 +96,25 @@ class Landscape(mesa.space.MultiGrid):
             self.set_property_attribute("Open_Microhabitat", pos, open_percent)
             self.set_property_attribute("Shrub_Microhabitat", pos, shrub_percent)
 
+    def return_mh_availability_dict(self, pos):
+        '''
+        Helper function to return the microhabitat availability dictionary by position. returns a dictionary like this
+            availability = {
+                'Shrub': 0.8,
+                'Open': 0.2,
+                'Burrow': 1.0
+                }
+        Eventually might add in more burrow dynamics but for now assuming there is always availability for burrow
+        '''
+        shrub_per = self.get_property_attribute(property_name='Shrub_Microhabitat', pos=pos)
+        open_per = self.get_property_attribute(property_name='Open_Microhabitat', pos=pos)
+        availability = {
+            'Shrub': shrub_per,
+            'Open': open_per,
+            'Burrow': 1
+        }
+        return availability
+
 
     def print_property_layer(self, property_name):
         '''
@@ -102,10 +122,11 @@ class Landscape(mesa.space.MultiGrid):
         '''
         layer = self.get_property_layer(property_name=property_name)
         print(f"\nValues for {property_name}:")
-        for y in range(self.height):
-            for x in range(self.width):
-                print(f"{layer.data[x, y]:.2f}", end=" ")
-            print()
+        print(self.properties[property_name].data)
+        # for y in range(self.height):
+        #     for x in range(self.width):
+        #         print(f"{layer.data[x, y]}", end=" ")
+        #     print()
 
     def visualize_property_layer(self, property_name):
         '''
@@ -117,7 +138,7 @@ class Landscape(mesa.space.MultiGrid):
         plt.figure(figsize=(10, 8))
         plt.imshow(data, cmap='hot', interpolation='nearest')
         plt.colorbar(label='Temperature')
-        plt.title(f'Heat Map of {property_name}')
+        plt.title(f'Heat Map of {property_name} at time step {self.model.step_id}')
         plt.xlabel('X Coordinate')
         plt.ylabel('Y Coordinate')
         plt.gca().invert_yaxis()

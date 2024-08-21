@@ -6,6 +6,8 @@ import math
 import networkx as nx
 import pandas as pd
 
+# Rattlesnake temperature model
+# https://journals.biologists.com/jeb/article/223/14/jeb223859/224523/The-effects-of-temperature-on-the-defensive
 
 class Rattlesnake(mesa.Agent):
     '''
@@ -22,6 +24,10 @@ class Rattlesnake(mesa.Agent):
         self.behavior_weights = self.random_make_behavioral_preference_weights(_test=True)
         self.utility_scores = self.generate_static_utility_vector()
         self._current_behavior = None
+        self.behavior_history = []
+        # Microhabitat and temperature
+        self._current_microhabitat = None
+        self.microhabitat_history = []
 
         # Agent is actively foraging
         self.active = True
@@ -33,6 +39,14 @@ class Rattlesnake(mesa.Agent):
     @current_behavior.setter
     def current_behavior(self, value):
         self._current_behavior = value
+
+    @property
+    def current_microhabitat(self):
+        return self._current_behavior
+
+    @current_microhabitat.setter
+    def current_behavior(self, value):
+        self._current_microhabitat = value
 
     def random_make_behavioral_preference_weights(self, _test=False):
         '''
@@ -81,6 +95,14 @@ class Rattlesnake(mesa.Agent):
     def calculate_overall_utility_additive(self, utility_scores, availability, weights):
         '''
         Helper function for calculating the additive utility scores adjusted for microhabitat availability in the landscape
+        Args:
+            - utility_scores: un adjusted utility scores associated with the behavior dictionary
+            - availability of habitat dictionary. An example would be
+            availability = {
+                'Shrub': 0.8,
+                'Open': 0.2,
+                'Burrow': 1.0
+                }
         '''
         overall_utility = {}
         for habitat in utility_scores:
@@ -96,7 +118,7 @@ class Rattlesnake(mesa.Agent):
         Args:
             - overal_utility: utility scores associated with the microhabitat adjusted for landscape availability
             - behaviors: List of available behaviors to choose from
-            - utility_scores: un adjusted utility scores associated with the behavior
+            - utility_scores: un adjusted utility scores associated with the behavior dictionary
         Returns:
             - behavior: (str) label of the behavior the organism chooses
             - microhabitat: (str) the microhabitat that the 
@@ -111,13 +133,34 @@ class Rattlesnake(mesa.Agent):
         behavior_probs = np.array(behavior_utilities) / np.sum(behavior_utilities)
         behavior = np.random.choice(behaviors, p=behavior_probs)
         # Potentially think about nesting microhabitat in behavior rather than behavior in microhabitat to see if it makes a difference
-        return microhabitat, behavior
+        self.current_behavior(value=behavior)
+        self.current_microhabitat(value=microhabitat)
+        self.log_choice(behavior=behavior, microhabitat=microhabitat)
+        return 
+    
+    def log_choice(self, microhabitat, behavior):
+        '''
+        Helper function for generating a list of the history of microhabitat and behavior
+        '''
+        self.behavior_history.append(behavior)
+        self.microhabitat_history.append(microhabitat)
     
     def is_starved(self):
         pass
 
-    def step(self):
+    def move(self):
         pass
+
+    def step(self, availability_dict, pos):
+        self.move()
+        availability = availability_dict
+        utility_scores = self.generate_static_utility_vector()
+        overall_utility = self.calculate_overall_utility_additive(utility_scores = utility_scores, availability = availability, weights)
+        self.simulate_decision(behaviors = self.behaviors)
+        print('Behavior History')
+        print(self.behavior_history)
+        print('Microhabitat History')
+        print(self.micrhabitat_history)
 
 class KangarooRat(mesa.Agent):
     '''
@@ -146,6 +189,9 @@ class KangarooRat(mesa.Agent):
         forage_weight = np.random.uniform(0.2, 0.4)
         thermoregulate_weight = 1 - rest_weight - thermoregulate_weight
         return [rest_weight, forage_weight, thermoregulate_weight]
+    
+    def move(self):
+        pass
 
     def step(self):
         pass

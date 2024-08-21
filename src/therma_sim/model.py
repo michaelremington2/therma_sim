@@ -47,7 +47,7 @@ class ThermaSim(mesa.Model):
                 x = self.random.randrange(self.landscape.width)
                 y = self.random.randrange(self.landscape.height)
                 pos = (x,y)
-                print(pos,agent_id)
+                #print(pos,agent_id)
                 if species=='KangarooRat':
                     # Create agent
                     krat = agents.KangarooRat(unique_id = agent_id, 
@@ -70,6 +70,21 @@ class ThermaSim(mesa.Model):
                     agent_id += 1
                 else:
                     raise ValueError(f'Class for species: {species} DNE')
+                
+    def useful_check_landscape_functions(self, property_layer_name):
+        self.landscape.visualize_property_layer('Open_Microhabitat')
+        self.landscape.print_property_layer('Shrub_Microhabitat')
+        self.landscape.check_landscape()
+
+    def randomize_snakes(self):
+        '''
+        helper function for self.step()
+
+        puts snakes in a list and shuffles them
+        '''
+        snake_shuffle = list(self.schedule.agents_by_type[agents.Rattlesnake].values())
+        self.random.shuffle(snake_shuffle)
+        return snake_shuffle
 
 
     def step(self):
@@ -77,12 +92,23 @@ class ThermaSim(mesa.Model):
         Main model step function used to run one step of the model.
         '''
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
-        print('Open')
-        self.landscape.print_property_layer('Open_Microhabitat')
-        print('Shrub')
-        self.landscape.print_property_layer('Shrub_Microhabitat')
-        #self.landscape.check_landscape()
-        self.schedule.step()
+        #self.schedule.step()
+        snake_shuffle = self.randomize_snakes()
+        print(snake_shuffle)
+
+        for agent in snake_shuffle:
+            agent.move()
+            agent.simulate_decision()
+            print('Behavior History')
+            print(agent.behavior_history)
+            print('Microhabitat History')
+            print(agent.micrhabitat_history)
+
+            #agent.eat()
+            #agent.maybe_die()
+
+        snake_shuffle = self.randomize_snakes()
+
         self.step_id += 1  # Increment the step counter
 
     def run_model(self, step_count=1000):
