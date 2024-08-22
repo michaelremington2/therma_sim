@@ -94,15 +94,10 @@ class ThermaSim(mesa.Model):
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         #self.schedule.step()
         snake_shuffle = self.randomize_snakes()
-        print(snake_shuffle)
 
         for agent in snake_shuffle:
-            agent.move()
-            agent.simulate_decision()
-            print('Behavior History')
-            print(agent.behavior_history)
-            print('Microhabitat History')
-            print(agent.micrhabitat_history)
+            availability = self.landscape.get_mh_availability_dict(pos=agent.pos)
+            agent.step(availability_dict = availability)
 
             #agent.eat()
             #agent.maybe_die()

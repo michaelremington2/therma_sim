@@ -96,7 +96,7 @@ class Landscape(mesa.space.MultiGrid):
             self.set_property_attribute("Open_Microhabitat", pos, open_percent)
             self.set_property_attribute("Shrub_Microhabitat", pos, shrub_percent)
 
-    def return_mh_availability_dict(self, pos):
+    def get_mh_availability_dict(self, pos):
         '''
         Helper function to return the microhabitat availability dictionary by position. returns a dictionary like this
             availability = {

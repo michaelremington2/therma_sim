@@ -9,13 +9,14 @@ moore = False
 width=4
 height=4
 popualation_initial_conditions = {'KangarooRat': 0,
-                                  'Rattlesnake': 5}
+                                  'Rattlesnake': 1}
 
 
 if __name__ ==  "__main__":
     model = ThermaSim(width=width, height=height, 
                       initial_agents_dictionary=popualation_initial_conditions,
                       thermal_profile_csv_fp=thermal_data_profile_fp,torus=torus, moore=moore)
-    model.run_model(step_count=1)
+    model.run_model(step_count=10)
+    
 
     

@@ -23,10 +23,10 @@ class Rattlesnake(mesa.Agent):
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
         self.behavior_weights = self.random_make_behavioral_preference_weights(_test=True)
         self.utility_scores = self.generate_static_utility_vector()
-        self._current_behavior = None
+        self._current_behavior = ''
         self.behavior_history = []
         # Microhabitat and temperature
-        self._current_microhabitat = None
+        self._current_microhabitat = ''
         self.microhabitat_history = []
 
         # Agent is actively foraging
@@ -42,10 +42,10 @@ class Rattlesnake(mesa.Agent):
 
     @property
     def current_microhabitat(self):
-        return self._current_behavior
+        return self._current_microhabitat
 
     @current_microhabitat.setter
-    def current_behavior(self, value):
+    def current_microhabitat(self, value):
         self._current_microhabitat = value
 
     def random_make_behavioral_preference_weights(self, _test=False):
@@ -65,7 +65,10 @@ class Rattlesnake(mesa.Agent):
             forage_weight = np.random.uniform(0.2, 0.4)
             thermoregulate_weight = 1 - rest_weight - thermoregulate_weight
         assert math.isclose(sum([rest_weight, forage_weight, thermoregulate_weight]), 1, rel_tol=1e-9)
-        return [rest_weight, forage_weight, thermoregulate_weight]
+        weights = {'Rest': rest_weight,
+                   'Forage': forage_weight,
+                   'Thermoregulate': thermoregulate_weight}
+        return weights
     
     def generate_static_utility_vector(self):
         '''
@@ -133,8 +136,8 @@ class Rattlesnake(mesa.Agent):
         behavior_probs = np.array(behavior_utilities) / np.sum(behavior_utilities)
         behavior = np.random.choice(behaviors, p=behavior_probs)
         # Potentially think about nesting microhabitat in behavior rather than behavior in microhabitat to see if it makes a difference
-        self.current_behavior(value=behavior)
-        self.current_microhabitat(value=microhabitat)
+        self.current_behavior=behavior
+        self.current_microhabitat=microhabitat
         self.log_choice(behavior=behavior, microhabitat=microhabitat)
         return 
     
@@ -151,56 +154,55 @@ class Rattlesnake(mesa.Agent):
     def move(self):
         pass
 
-    def step(self, availability_dict, pos):
+    def step(self, availability_dict):
         self.move()
-        availability = availability_dict
         utility_scores = self.generate_static_utility_vector()
-        overall_utility = self.calculate_overall_utility_additive(utility_scores = utility_scores, availability = availability, weights)
-        self.simulate_decision(behaviors = self.behaviors)
+        overall_utility = self.calculate_overall_utility_additive(utility_scores = utility_scores, availability = availability_dict, weights=self.behavior_weights)
+        self.simulate_decision(behaviors = self.behaviors, utility_scores=utility_scores, overall_utility=overall_utility)
         print('Behavior History')
         print(self.behavior_history)
         print('Microhabitat History')
-        print(self.micrhabitat_history)
+        print(self.microhabitat_history)
 
-class KangarooRat(mesa.Agent):
-    '''
-    Agent Class for kangaroo rat agents.
-      A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
-    seed patch class.
-    '''
-    def __init__(self, unique_id, model, pos, moore=False):
-        super().__init__(unique_id, model)
-        self.pos = pos
-        self.moore = moore
+# class KangarooRat(mesa.Agent):
+#     '''
+#     Agent Class for kangaroo rat agents.
+#       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
+#     seed patch class.
+#     '''
+#     def __init__(self, unique_id, model, pos, moore=False):
+#         super().__init__(unique_id, model)
+#         self.pos = pos
+#         self.moore = moore
         
 
-        # Agent is actively foraging
-        self.active = True
+#         # Agent is actively foraging
+#         self.active = True
 
-    def random_make_behavioral_preference_weights(self):
-        '''
-        Creates the vector of behavior preferences at random (uniform distribution).
-        Args:
-            - None
-        Funcions method is used in:
-            - Init
-        '''
-        rest_weight = np.random.uniform(0.4, 0.6)
-        forage_weight = np.random.uniform(0.2, 0.4)
-        thermoregulate_weight = 1 - rest_weight - thermoregulate_weight
-        return [rest_weight, forage_weight, thermoregulate_weight]
+#     def random_make_behavioral_preference_weights(self):
+#         '''
+#         Creates the vector of behavior preferences at random (uniform distribution).
+#         Args:
+#             - None
+#         Funcions method is used in:
+#             - Init
+#         '''
+#         rest_weight = np.random.uniform(0.4, 0.6)
+#         forage_weight = np.random.uniform(0.2, 0.4)
+#         thermoregulate_weight = 1 - rest_weight - thermoregulate_weight
+#         return [rest_weight, forage_weight, thermoregulate_weight]
     
-    def move(self):
-        pass
+#     def move(self):
+#         pass
 
-    def step(self):
-        pass
+#     def step(self):
+#         pass
 
 
 
-class SeedPatch(mesa.Agent):
-    def __init__(self, unique_id, model):
-        super().__init__(unique_id, model)
+# class SeedPatch(mesa.Agent):
+#     def __init__(self, unique_id, model):
+#         super().__init__(unique_id, model)
 
-    def step(self):
-        pass
+#     def step(self):
+#         pass
