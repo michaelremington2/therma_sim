@@ -6,6 +6,7 @@ import math
 import networkx as nx
 import pandas as pd
 
+
 # Rattlesnake temperature model
 # https://journals.biologists.com/jeb/article/223/14/jeb223859/224523/The-effects-of-temperature-on-the-defensive
 
@@ -14,9 +15,9 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, pos, moore=False):
+    def __init__(self, unique_id, model, initial_pos, initial_body_temperature=25, k=0.01,t_pref_min=18, t_pref_max=32, moore=False):
         super().__init__(unique_id, model)
-        self.pos = pos
+        self.pos = initial_pos
         self.moore = moore
 
         # Behavioral profile
@@ -25,9 +26,14 @@ class Rattlesnake(mesa.Agent):
         self.utility_scores = self.generate_static_utility_vector()
         self._current_behavior = ''
         self.behavior_history = []
-        # Microhabitat and temperature
+        # Microhabitat
         self._current_microhabitat = ''
         self.microhabitat_history = []
+        # Temperature
+        self._body_temperature = initial_body_temperature
+        self.k = k
+        self.t_pref_min = t_pref_min
+        self.t_pref_max = t_pref_max
 
         # Agent is actively foraging
         self.active = True
@@ -47,6 +53,33 @@ class Rattlesnake(mesa.Agent):
     @current_microhabitat.setter
     def current_microhabitat(self, value):
         self._current_microhabitat = value
+
+    @property
+    def body_temperature(self):
+        return self._body_temperature
+
+    @body_temperature.setter
+    def body_temperature(self, value):
+        self._body_temperature = value
+
+    def cooling_eq_k(self, k, t_body, t_env, delta_t):
+        return t_env+(t_body-t_env)*math.exp(-k*delta_t) # add time back in if it doesnt work
+    
+    def update_body_temp(self, t_env, delta_t):
+        old_body_temp = self.body_temperature
+        self.body_temperature = self.cooling_eq_k(k=self.k, t_body=self.body_temperature, t_env=t_env, delta_t=delta_t)
+        return
+    
+    def get_t_env(self, current_microhabitat):
+        if current_microhabitat=='Burrow':
+            t_env = self.model.landscape.get_property_attribute(property_name='Burrow_Temp', pos=self.pos)
+        elif current_microhabitat=='Open':
+            t_env = self.model.landscape.get_property_attribute(property_name='Open_Temp', pos=self.pos)
+        elif current_microhabitat=='Shrub':
+            t_env = self.model.landscape.get_property_attribute(property_name='Shrub_Temp', pos=self.pos)
+        else:
+            raise ValueError('Microhabitat Property Value cant be found')
+
 
     def random_make_behavioral_preference_weights(self, _test=False):
         '''
