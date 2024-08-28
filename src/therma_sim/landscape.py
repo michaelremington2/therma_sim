@@ -11,6 +11,7 @@ class Landscape(mesa.space.MultiGrid):
         super().__init__(width, height, torus)
         self.model = model
         self.thermal_profile = pd.read_csv(thermal_profile_csv_fp, header=0)
+        self.microhabitats = ['Burrow', 'Open', 'Shrub']
 
         # make Property Layers
         self.burrow_temp = mesa.space.PropertyLayer("Burrow_Temp", self.width, self.height, default_value=0.0)
@@ -62,12 +63,12 @@ class Landscape(mesa.space.MultiGrid):
         '''
         Helper function for setting and resetting the thermal temperatures in the landscape
         '''
-        shrub_emp_mean = self.thermal_profile['Shrub_mean_Temperature'].iloc[step_id]
-        shrub_emp_std = self.thermal_profile['Shrub_stddev_Temperature'].iloc[step_id]
-        open_emp_mean = self.thermal_profile['Open_mean_Temperature'].iloc[step_id]
-        open_emp_std = self.thermal_profile['Open_stddev_Temperature'].iloc[step_id]
-        burrow_emp_mean = self.thermal_profile['Burrow_mean_Temperature'].iloc[step_id]
-        burrow_emp_std = self.thermal_profile['Burrow_stddev_Temperature'].iloc[step_id]
+        shrub_emp_mean = self.model.thermal_profile['Shrub_mean_Temperature'].iloc[step_id]
+        shrub_emp_std = self.model.thermal_profile['Shrub_stddev_Temperature'].iloc[step_id]
+        open_emp_mean = self.model.thermal_profile['Open_mean_Temperature'].iloc[step_id]
+        open_emp_std = self.model.thermal_profile['Open_stddev_Temperature'].iloc[step_id]
+        burrow_emp_mean = self.model.thermal_profile['Burrow_mean_Temperature'].iloc[step_id]
+        burrow_emp_std = self.model.thermal_profile['Burrow_stddev_Temperature'].iloc[step_id]
         #print('mean ', shrub_emp_mean)
         #print('std ', shrub_emp_std)
         # Property values arent setting right or might be rounding weirdly
