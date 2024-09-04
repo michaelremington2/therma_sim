@@ -36,8 +36,10 @@ class Rattlesnake(mesa.Agent):
         self.t_pref_max = t_pref_max
         self.body_temp_history = []
 
-        # Agent is actively foraging
-        self.active = True
+        # Agent logisic checks
+        self._point = None
+        self._active = False
+        self._dead = False
 
     @property
     def current_behavior(self):
@@ -63,6 +65,53 @@ class Rattlesnake(mesa.Agent):
     def body_temperature(self, value):
         self._body_temperature = value
 
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        self._active = value
+
+    @property
+    def dead(self):
+        return self._dead
+
+    @dead.setter
+    def dead(self, value):
+        self._dead = value
+        if value==False:
+            self.active=False
+
+    @property
+    def point(self):
+        return self._point
+
+    @point.setter
+    def point(self, value):
+        self._point = value
+
+    def generate_random_point(self):
+        hectare_size = 100
+        x = np.random.uniform(0, hectare_size)
+        y = np.random.uniform(0, hectare_size)
+        self.point = (x, y)
+    
+    def activate_snake(self):
+        if self.current_microhabitat != 'Burrow':
+            self.active = True
+        else:
+            self.active = False
+    
+    def move(self):
+        pass
+
+    def step(self, hour):
+        self.activate_krat(hour=hour)
+        if self.active:
+            self.simulate_point()
+
+
     def cooling_eq_k(self, k, t_body, t_env, delta_t):
         return t_env+(t_body-t_env)*math.exp(-k*delta_t) # add time back in if it doesnt work
     
@@ -81,7 +130,6 @@ class Rattlesnake(mesa.Agent):
         old_body_temp = self.body_temperature
         self.body_temperature = self.cooling_eq_k(k=self.k, t_body=self.body_temperature, t_env=t_env, delta_t=delta_t)
         return
-
 
     def random_make_behavioral_preference_weights(self, _test=False):
         '''
@@ -279,7 +327,9 @@ class Rattlesnake(mesa.Agent):
         pass
 
     def step(self, availability_dict):
+        self.activate_snake()
         self.move()
+        self.generate_random_point()
         overall_utility = self.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability_dict, behavior_preferences=self.behavior_weights)
         self.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
@@ -301,26 +351,59 @@ class KangarooRat(mesa.Agent):
         
 
         # Agent is actively foraging
-        self.active = True
+        self._point = None
+        self._active = False
+        self._dead = False
 
-    def random_make_behavioral_preference_weights(self):
-        '''
-        Creates the vector of behavior preferences at random (uniform distribution).
-        Args:
-            - None
-        Funcions method is used in:
-            - Init
-        '''
-        rest_weight = np.random.uniform(0.4, 0.6)
-        forage_weight = np.random.uniform(0.2, 0.4)
-        thermoregulate_weight = 1 - rest_weight - thermoregulate_weight
-        return [rest_weight, forage_weight, thermoregulate_weight]
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        self._active = value
+
+    @property
+    def dead(self):
+        return self._dead
+
+    @dead.setter
+    def dead(self, value):
+        self._dead = value
+        if value==False:
+            self.active=False
+
+    @property
+    def point(self):
+        return self._point
+
+    @point.setter
+    def point(self, value):
+        if isinstance(value, tuple) and len(value) == 2:
+            self._point = value
+        else:
+            raise ValueError("Point must be a tuple with two elements (x, y)")
+
+    def generate_random_point(self):
+        hectare_size = 100
+        x = np.random.uniform(0, hectare_size)
+        y = np.random.uniform(0, hectare_size)
+        self.point = (x, y)
+    
+    def activate_krat(self, hour):
+        active_hours = [20, 21, 22, 23, 24, 0, 1, 2, 3, 4, 5, 6]
+        if hour in active_hours:
+            self.active = True
+        else:
+            self.active = False
     
     def move(self):
         pass
 
-    def step(self):
-        pass
+    def step(self, hour):
+        self.activate_krat(hour=hour)
+        if self.active:
+            self.generate_random_point()
 
 
 

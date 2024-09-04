@@ -38,6 +38,13 @@ class ThermaSim(mesa.Model):
         self.landscape = self.make_landscape(model=self, thermal_profile_csv_fp = thermal_profile_csv_fp, width=width, height=height, torus=torus)
         ## Intialize agents
         self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
+        # Data collector
+        self.datacollector = mesa.DataCollector(
+            model_reporters = {"Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
+                               "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),},
+            agent_reporters = {"Behavior": "current_behavior",
+                               'Microhabitat': "current_microhabitat",
+                               'Body_Temperature': "Body_Temp"})
 
     @property
     def time_of_day(self):
@@ -101,6 +108,20 @@ class ThermaSim(mesa.Model):
         self.random.shuffle(snake_shuffle)
         return snake_shuffle
     
+    def randomize_active_snakes(self):
+        '''
+        Helper function for self.step()
+
+        Puts active snakes in a list and shuffles them
+        '''
+        # Filter only active KangarooRats
+        active_snakes = [snake for snake in self.schedule.agents_by_type[agents.Rattlesnake].values() if snake.active]
+        
+        # Shuffle the list of active KangarooRats
+        self.random.shuffle(active_snakes )
+    
+        return active_snakes 
+    
     def randomize_krats(self):
         '''
         helper function for self.step()
@@ -108,30 +129,72 @@ class ThermaSim(mesa.Model):
         puts snakes in a list and shuffles them
         '''
         krat_shuffle = list(self.schedule.agents_by_type[agents.KangarooRat].values())
-        print(f'Krats: {len(krat_shuffle)}')
+        #print(f'Krats: {len(krat_shuffle)}')
         self.random.shuffle(krat_shuffle)
         return krat_shuffle
+    
+    def randomize_active_krats(self):
+        '''
+        Helper function for self.step()
+
+        Puts active Kangaroo Rats in a list and shuffles them
+        '''
+        # Filter only active KangarooRats
+        active_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if krat.active]
+        
+        # Shuffle the list of active KangarooRats
+        self.random.shuffle(active_krats)
+    
+        return active_krats
+    
+    def check_for_interaction(self, snake_point, krat_point, successful_strike_dist):
+        '''
+        Helper function in the interaction model to test if a snake agent interacts with a krat agent
+        '''
+        x1, y1 = snake_point
+        x2, y2 = krat_point
+        dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+        if dist <= successful_strike_dist:
+            print('Strike!')
+            print(f'Distance: {dist}')
+    
+    def interaction_model(self):
+        '''
+        Main interaction model between agents. The model simulates point locations within a hectare then checks if a snake and a krat agent 
+        are within striking distance of eachother if they are active.
+        '''
+        active_krats = self.randomize_active_krats()
+        active_snakes = self.randomize_active_snakes()
+        for snake in active_snakes:
+            for krat in active_krats:
+                snake_point = snake.point
+                krat_point = krat.point
+                self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=3)
+
 
     def step(self):
         '''
         Main model step function used to run one step of the model.
         '''
         self.time_of_day = self.thermal_profile['hour'].iloc[self.step_id]
-        print(f'Hour: {self.time_of_day}')
+        #print(f'Hour: {self.time_of_day}')
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         #self.schedule.step()
+        # Snakes
         snake_shuffle = self.randomize_snakes()
-        krat_shuffle = self.randomize_krats()
-
-        for agent in snake_shuffle:
-            availability = self.landscape.get_mh_availability_dict(pos=agent.pos)
-            agent.step(availability_dict = availability)
-
+        for snake in snake_shuffle:
+            availability = self.landscape.get_mh_availability_dict(pos=snake.pos)
+            snake.step(availability_dict = availability)
             #agent.eat()
             #agent.maybe_die()
-
         snake_shuffle = self.randomize_snakes()
-
+        # Krats
+        krat_shuffle = self.randomize_krats()
+        for krat in krat_shuffle:
+            krat.step(hour = self.time_of_day)
+        krat_shuffle = self.randomize_krats()
+        self.interaction_model()
+        self.datacollector.collect(self)
         self.step_id += 1  # Increment the step counter
 
     def run_model(self, step_count=1000):
