@@ -169,7 +169,8 @@ class ThermaSim(mesa.Model):
             for krat in active_krats:
                 snake_point = snake.point
                 krat_point = krat.point
-                self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=3)
+                self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=0.068)
+                # Parameter is from https://www.nature.com/articles/srep40412/tables/1
 
 
     def step(self):

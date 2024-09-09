@@ -146,7 +146,7 @@ class Rattlesnake(mesa.Agent):
         else:
             rest_weight = np.random.uniform(0.4, 0.6)
             forage_weight = np.random.uniform(0.2, 0.4)
-            thermoregulate_weight = 1 - rest_weight - thermoregulate_weight
+            thermoregulate_weight = 1 - rest_weight - forage_weight
         assert math.isclose(sum([rest_weight, forage_weight, thermoregulate_weight]), 1, rel_tol=1e-9)
         weights = {'Rest': rest_weight,
                    'Forage': forage_weight,
@@ -260,8 +260,9 @@ class Rattlesnake(mesa.Agent):
         for behavior in utility_scores:
             behavior_utilities = []
             for habitat in utility_scores[behavior]:
-                behavior_utilities.append(utility_scores[behavior][habitat] * behavior_preferences[behavior])
-            overall_utility[behavior] = sum(behavior_utilities) * mh_availability[habitat]
+                adjusted_utility = utility_scores[behavior][habitat] * behavior_preferences[behavior] * mh_availability[habitat]
+                behavior_utilities.append(adjusted_utility)
+            overall_utility[behavior] = sum(behavior_utilities)
         return overall_utility
 
     def simulate_decision_b1mh2(self, overall_utility, microhabitats, utility_scores):
@@ -275,19 +276,38 @@ class Rattlesnake(mesa.Agent):
             - behavior: (str) label of the behavior the organism chooses
             - microhabitat: (str) the microhabitat that the organism chooses
         '''
-        # Choose behavior based on overall utility
-        behavior_probs = np.array(list(overall_utility.values()))
-        behavior_probs /= np.sum(behavior_probs)
+        # Normalize overall utility to get valid probabilities for behavior selection
+        behavior_probs = np.array(list(overall_utility.values()), dtype=float)
+        
+        # Handle the case where all utilities are zero (assign equal probabilities)
+        if np.sum(behavior_probs) == 0:
+            behavior_probs = np.ones_like(behavior_probs) / len(behavior_probs)
+        else:
+            behavior_probs /= np.sum(behavior_probs)
+        
+        # Choose behavior based on overall utility probabilities
         behavior = np.random.choice(list(overall_utility.keys()), p=behavior_probs)
 
         # Choose microhabitat within the selected behavior
         microhabitat_utilities = [utility_scores[behavior][microhabitat] for microhabitat in microhabitats]
-        microhabitat_probs = np.array(microhabitat_utilities) / np.sum(microhabitat_utilities)
+        
+        # Ensure the microhabitat probabilities are floating-point for division
+        microhabitat_probs = np.array(microhabitat_utilities, dtype=float)
+        
+        # Handle the case where all microhabitat utilities are zero (assign equal probabilities)
+        if np.sum(microhabitat_probs) == 0:
+            microhabitat_probs = np.ones_like(microhabitat_probs) / len(microhabitat_probs)
+        else:
+            microhabitat_probs /= np.sum(microhabitat_probs)
+        
+        # Choose microhabitat based on normalized probabilities
         microhabitat = np.random.choice(microhabitats, p=microhabitat_probs)
 
+        # Update the object's current state
         self.current_behavior = behavior
         self.current_microhabitat = microhabitat
-        return 
+        
+        return
     
     def log_choice(self, microhabitat, behavior, body_temp):
         '''
@@ -313,6 +333,10 @@ class Rattlesnake(mesa.Agent):
             self.microhabitat_history.pop(0)
         if len(self.body_temp_history) > 10:
             self.body_temp_history.pop(0)
+
+    def print_history(self):
+        print(self.behavior_history)
+        print(self.microhabitat_history)
             
     ###########################################################
     #
@@ -335,7 +359,7 @@ class Rattlesnake(mesa.Agent):
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
         self.update_body_temp(t_env, delta_t=self.model.delta_t)
         self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
-        #self.print_history()
+        self.print_history()
 
 
 class KangarooRat(mesa.Agent):
