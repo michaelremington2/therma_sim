@@ -8,6 +8,7 @@ torus = False
 moore = False
 width=1
 height=1
+interaction_distcance = 0.068
 # TO DO!!!! Add checks that for pop count > 0
 popualation_initial_conditions = {'KangarooRat': 1,
                                   'Rattlesnake': 1}

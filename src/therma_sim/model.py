@@ -15,11 +15,13 @@ class ThermaSim(mesa.Model):
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
     def __init__(self, initial_agents_dictionary,
-                 thermal_profile_csv_fp, delta_t=70, width=50, height=50,
+                 thermal_profile_csv_fp, interaction_dist=0.068,
+                 delta_t=70, width=50, height=50,
                  torus=False, moore=False, seed=None):
 
         self.initial_agents_dictionary = initial_agents_dictionary
         self.thermal_profile = pd.read_csv(thermal_profile_csv_fp, header=0)
+        self.interaction_dist = interaction_dist
         self.delta_t = delta_t
         self.moore = moore
         # 
@@ -147,18 +149,18 @@ class ThermaSim(mesa.Model):
     
         return active_krats
     
-    def check_for_interaction(self, snake_point, krat_point, successful_strike_dist):
+    def check_for_interaction(self, snake_point, krat_point, interaction_dist):
         '''
         Helper function in the interaction model to test if a snake agent interacts with a krat agent
         '''
         x1, y1 = snake_point
         x2, y2 = krat_point
         dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        if dist <= successful_strike_dist:
+        if dist <= interaction_dist:
             print('Strike!')
             print(f'Distance: {dist}')
     
-    def interaction_model(self):
+    def interaction_model(self, interaction_dist):
         '''
         Main interaction model between agents. The model simulates point locations within a hectare then checks if a snake and a krat agent 
         are within striking distance of eachother if they are active.
@@ -169,7 +171,7 @@ class ThermaSim(mesa.Model):
             for krat in active_krats:
                 snake_point = snake.point
                 krat_point = krat.point
-                self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=0.068)
+                self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=interaction_dist)
                 # Parameter is from https://www.nature.com/articles/srep40412/tables/1
 
 
@@ -194,7 +196,7 @@ class ThermaSim(mesa.Model):
         for krat in krat_shuffle:
             krat.step(hour = self.time_of_day)
         krat_shuffle = self.randomize_krats()
-        self.interaction_model()
+        self.interaction_model(interaction_dist=self.interaction_dist)
         self.datacollector.collect(self)
         self.step_id += 1  # Increment the step counter
 
