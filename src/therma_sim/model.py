@@ -157,8 +157,14 @@ class ThermaSim(mesa.Model):
         x2, y2 = krat_point
         dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         if dist <= interaction_dist:
-            print('Strike!')
-            print(f'Distance: {dist}')
+            # print('Strike!')
+            # print(f'Distance: {dist}')
+            return True
+            # distance = maybe collect distance eventually
+        else:
+            return False
+
+
     
     def interaction_model(self, interaction_dist):
         '''
@@ -171,8 +177,9 @@ class ThermaSim(mesa.Model):
             for krat in active_krats:
                 snake_point = snake.point
                 krat_point = krat.point
-                self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=interaction_dist)
-                # Parameter is from https://www.nature.com/articles/srep40412/tables/1
+                interaction = self.check_for_interaction(snake_point=snake_point, krat_point=krat_point,successful_strike_dist=interaction_dist)
+                if interaction:
+                    pass
 
 
     def step(self):

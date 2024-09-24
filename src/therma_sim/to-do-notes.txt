@@ -1,0 +1,11 @@
+# Model
+- TO DO!!!! Add checks that for pop count > 0
+- integrate new interaction parameters as input values
+
+# metabolism
+- initiate metabolism for snakes
+
+# rattlesnakes
+- add metabolism
+- take into account brumination
+# kangaroo rats

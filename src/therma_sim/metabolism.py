@@ -17,11 +17,30 @@ class EctothermMetabolism(object):
         return smr
     
     def hourly_energy_expendeture(self, smr, activity_coeffcient):
-        '''Our model for hourly energy expendature'''
+        '''
+        Our model for hourly energy expendature.
+        Inputs:
+            SMR - log(V02) which is in ml o^2 / hour
+            Activity_coeffcient - multiplier to convert smr to amr. smr is the resting rate so a multiplier of 1 returns smr. A multiplier of >1 represents activity.
+        Outputs:
+            cals_burnt_per_hour - number of calories burnt by an individual.
+        '''
         hee = smr*activity_coeffcient
         joules_per_hour = hee*self.mlo2_to_joules
         cals_burnt_per_hour = joules_per_hour*self.joules_to_cals
         return cals_burnt_per_hour
+    
+    def energy_intake(self, prey_mass, cal_per_gram_conversion, percent_digestion_cals):
+        '''
+        Amount of calories yielded from a prey agent.
+        Inputs:
+            prey_mass - mass of prey agent in grams
+            cal_per_gram_conversion - conversion rate to get prey grams to calories
+            percent_digestion_cals - percentage of calories lost to digestion.
+        '''
+        return float(prey_mass*cal_per_gram_conversion*percent_digestion_cals)
+    
+
     
     def energy_expendeture_graph(self):
         '''
