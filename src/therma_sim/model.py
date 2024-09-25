@@ -8,16 +8,17 @@ import pandas as pd
 import landscape
 import agents 
 import warnings
+import logging
+import json
 warnings.filterwarnings("ignore")
 
 class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
-    def __init__(self, initial_agents_dictionary,
-                 thermal_profile_csv_fp, interaction_dist=0.068,
-                 delta_t=70, width=50, height=50,
-                 torus=False, moore=False, seed=None):
+    def __init__(self, config, seed=None):
+        self.config = config
+        # Need to check on these tomorrow 9/25
 
         self.initial_agents_dictionary = initial_agents_dictionary
         self.thermal_profile = pd.read_csv(thermal_profile_csv_fp, header=0)
@@ -163,8 +164,6 @@ class ThermaSim(mesa.Model):
             # distance = maybe collect distance eventually
         else:
             return False
-
-
     
     def interaction_model(self, interaction_dist):
         '''

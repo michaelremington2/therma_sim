@@ -102,15 +102,6 @@ class Rattlesnake(mesa.Agent):
             self.active = True
         else:
             self.active = False
-    
-    def move(self):
-        pass
-
-    def step(self, hour):
-        self.activate_krat(hour=hour)
-        if self.active:
-            self.simulate_point()
-
 
     def cooling_eq_k(self, k, t_body, t_env, delta_t):
         return t_env+(t_body-t_env)*math.exp(-k*delta_t) # add time back in if it doesnt work
