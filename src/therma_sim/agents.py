@@ -24,7 +24,7 @@ class Rattlesnake(mesa.Agent):
                                                          X2_temp=self.snake_config['X2_temp'],
                                                          X3_const=self.snake_config['X3_const'])
         self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
-        self.moore = snake_config['moore']
+        self.moore = self.snake_config['moore']
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
@@ -41,19 +41,19 @@ class Rattlesnake(mesa.Agent):
         self.microhabitat_history = []
 
         # Temperature
-        self.delta_t = snake_config['delta_t']
-        self._body_temperature = snake_config['Initial_Body_Temperature']
-        self.k = snake_config['k']
-        self.t_pref_min = snake_config['t_pref_min']
-        self.t_pref_max = snake_config['t_pref_max']
-        self.t_opt = snake_config['t_opt']
-        self.strike_performance_opt = snake_config['performance_opt']
+        self.delta_t = self.snake_config['delta_t']
+        self._body_temperature = self.snake_config['Initial_Body_Temperature']
+        self.k = self.snake_config['k']
+        self.t_pref_min = self.snake_config['t_pref_min']
+        self.t_pref_max = self.snake_config['t_pref_max']
+        self.t_opt = self.snake_config['t_opt']
+        self.strike_performance_opt = self.snake_config['strike_performance_opt']
         self.body_temp_history = []
 
         # Agent logisic checks
         self._point = None
         self._active = False
-        self._dead = False
+        self._alive = True
 
     @property
     def current_behavior(self):
@@ -88,12 +88,12 @@ class Rattlesnake(mesa.Agent):
         self._active = value
 
     @property
-    def dead(self):
-        return self._dead
+    def alive(self):
+        return self._alive
 
-    @dead.setter
-    def dead(self, value):
-        self._dead = value
+    @alive.setter
+    def alive(self, value):
+        self._alive = value
         if value==False:
             self.active=False
 
@@ -405,8 +405,8 @@ class KangarooRat(mesa.Agent):
         return self._alive
 
     @alive.setter
-    def dead(self, value):
-        self._dead = value
+    def alive(self, value):
+        self._alive = value
         if value==False:
             self.active=False
 

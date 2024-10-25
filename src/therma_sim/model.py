@@ -233,7 +233,7 @@ class ThermaSim(mesa.Model):
         for krat in krat_shuffle:
             krat.step(hour = self.time_of_day)
         krat_shuffle = self.randomize_krats()
-        self.kr_rs_interaction_module.interaction_model()
+        self.kr_rs_interaction_module.interaction_module()
         self.datacollector.collect(self)
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
