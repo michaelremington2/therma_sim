@@ -3,16 +3,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class EctothermMetabolism(object):
-    def __init__(self):
+    def __init__(self, X1_mass, X2_temp, X3_const):
         self.mlo2_to_joules = 19.874
         self.joules_to_cals = 2.39e-4
+        self.X1_mass = X1_mass
+        self.X2_temp = X2_temp
+        self.X3_const = X3_const
 
 
-    def smr_eq(self, mass, temperature, X1_mass, X2_temp, X3_const):
+    def smr_eq(self, mass, temperature):
         '''This returns VO2 which is a proxy for SMR. 
             mass - the individuals mass in grams
             temperature - body temperture of the individual in celsius'''
-        log_smr = (X1_mass * np.log10(mass)) + (X2_temp * temperature) + X3_const
+        log_smr = (self.X1_mass * np.log10(mass)) + (self.X2_temp * temperature) + self.X3_const
         smr = 10**log_smr
         return smr
     
@@ -39,8 +42,6 @@ class EctothermMetabolism(object):
             percent_digestion_cals - percentage of calories lost to digestion.
         '''
         return float(prey_mass*cal_per_gram_conversion*percent_digestion_cals)
-    
-
     
     def energy_expendeture_graph(self):
         '''

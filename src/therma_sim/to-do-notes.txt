@@ -4,8 +4,13 @@
 
 # metabolism
 - initiate metabolism for snakes
+- energy intake
+- set initial calories
 
 # rattlesnakes
 - add metabolism
 - take into account brumination
+
 # kangaroo rats
+
+- remove dead agents

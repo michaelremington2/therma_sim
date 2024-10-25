@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import math
 import networkx as nx
 import pandas as pd
+import metabolism
 
 
 # Rattlesnake temperature model
@@ -15,10 +16,15 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, initial_pos, initial_body_temperature=25, k=0.01,t_pref_min=18, t_pref_max=32, moore=False):
+    def __init__(self, unique_id, model, initial_pos,  snake_config):
         super().__init__(unique_id, model)
         self.pos = initial_pos
-        self.moore = moore
+        self.snake_config = snake_config
+        self.metabolism = metabolism.EctothermMetabolism(X1_mass=self.snake_config['X1_mass'],
+                                                         X2_temp=self.snake_config['X2_temp'],
+                                                         X3_const=self.snake_config['X3_const'])
+        self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
+        self.moore = snake_config['moore']
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
@@ -26,14 +32,22 @@ class Rattlesnake(mesa.Agent):
         self.utility_scores = self.generate_static_utility_vector_b1mh2()
         self._current_behavior = ''
         self.behavior_history = []
+        self.activity_coefficients = {'Rest':1,
+                                      'Thermoregulate':1,
+                                      'Forage':1.5}
+
         # Microhabitat
         self._current_microhabitat = ''
         self.microhabitat_history = []
+
         # Temperature
-        self._body_temperature = initial_body_temperature
-        self.k = k
-        self.t_pref_min = t_pref_min
-        self.t_pref_max = t_pref_max
+        self.delta_t = snake_config['delta_t']
+        self._body_temperature = snake_config['Initial_Body_Temperature']
+        self.k = snake_config['k']
+        self.t_pref_min = snake_config['t_pref_min']
+        self.t_pref_max = snake_config['t_pref_max']
+        self.t_opt = snake_config['t_opt']
+        self.strike_performance_opt = snake_config['performance_opt']
         self.body_temp_history = []
 
         # Agent logisic checks
@@ -91,6 +105,10 @@ class Rattlesnake(mesa.Agent):
     def point(self, value):
         self._point = value
 
+    def set_mass(self, body_size_range):
+        mass = np.random.uniform(body_size_range)
+        return mass
+
     def generate_random_point(self):
         hectare_size = 100
         x = np.random.uniform(0, hectare_size)
@@ -102,6 +120,9 @@ class Rattlesnake(mesa.Agent):
             self.active = True
         else:
             self.active = False
+
+    def get_activity_coefficent(self):
+        return self.activity_coeffiecents[self.current_behavior]
 
     def cooling_eq_k(self, k, t_body, t_env, delta_t):
         return t_env+(t_body-t_env)*math.exp(-k*delta_t) # add time back in if it doesnt work
@@ -302,14 +323,6 @@ class Rattlesnake(mesa.Agent):
     
     def log_choice(self, microhabitat, behavior, body_temp):
         '''
-        Helper function for generating a list of the history of microhabitat and behavior
-        '''
-        self.behavior_history.append(behavior)
-        self.microhabitat_history.append(microhabitat)
-        self.body_temp_history.append(body_temp)
-
-    def log_choice(self, microhabitat, behavior, body_temp):
-        '''
         Helper function for generating a list of the history of microhabitat and behavior,
         ensuring the history lists are only 10 elements long.
         '''
@@ -341,14 +354,20 @@ class Rattlesnake(mesa.Agent):
     def move(self):
         pass
 
+    def cals_spent(self):
+        smr = self.metabolism.smr_eq(mass=self.mass, temperature=self.body_temperature)
+        activity_coefficient = self.get_activity_coefficent()
+        self.metabolism.hourly_energy_expendeture(smr=smr, activity_coefficient=activity_coefficient) 
+
     def step(self, availability_dict):
         self.activate_snake()
+        
         self.move()
         self.generate_random_point()
         overall_utility = self.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability_dict, behavior_preferences=self.behavior_weights)
         self.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
-        self.update_body_temp(t_env, delta_t=self.model.delta_t)
+        self.update_body_temp(t_env, delta_t=self.delta_t)
         self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
         self.print_history()
 
@@ -359,16 +378,19 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, initial_pos, moore=False):
+    def __init__(self, unique_id, model, initial_pos, krat_config):
         super().__init__(unique_id, model)
         self.initial_pos = initial_pos
-        self.moore = moore
+        self.krat_config = krat_config
+        self.active_hours = self.krat_config['active_hours']
+        self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
+        self.moore = self.krat_config['moore']
         
 
         # Agent is actively foraging
         self._point = None
         self._active = False
-        self._dead = False
+        self._alive = True
 
     @property
     def active(self):
@@ -379,10 +401,10 @@ class KangarooRat(mesa.Agent):
         self._active = value
 
     @property
-    def dead(self):
-        return self._dead
+    def alive(self):
+        return self._alive
 
-    @dead.setter
+    @alive.setter
     def dead(self, value):
         self._dead = value
         if value==False:
@@ -404,10 +426,13 @@ class KangarooRat(mesa.Agent):
         x = np.random.uniform(0, hectare_size)
         y = np.random.uniform(0, hectare_size)
         self.point = (x, y)
+
+    def set_mass(self, body_size_range):
+        mass = np.random.uniform(body_size_range)
+        return mass
     
     def activate_krat(self, hour):
-        active_hours = [20, 21, 22, 23, 24, 0, 1, 2, 3, 4, 5, 6]
-        if hour in active_hours:
+        if hour in self.active_hours:
             self.active = True
         else:
             self.active = False
