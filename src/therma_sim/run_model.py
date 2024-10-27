@@ -42,6 +42,7 @@ input_dictionary = {
     'Initial_Population_Sizes': initial_population_sizes,
     'Rattlesnake_Parameters':{'Body_sizes':snake_body_sizes,
                               'Initial_Body_Temperature': initial_body_temperature,
+                              'initial_calories': 300,
                               'k': k,
                               't_pref_min': t_pref_min,
                               't_pref_max': t_pref_max,

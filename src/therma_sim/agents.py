@@ -54,6 +54,8 @@ class Rattlesnake(mesa.Agent):
         self._point = None
         self._active = False
         self._alive = True
+        self._metabolic_state = None
+        self.metabolic_state = self.snake_config['initial_calories']
 
     @property
     def current_behavior(self):
@@ -104,6 +106,40 @@ class Rattlesnake(mesa.Agent):
     @point.setter
     def point(self, value):
         self._point = value
+
+    @property
+    def metabolic_state(self):
+        """
+        Getter for `metabolic_state`, returns the current float value.
+        """
+        return self._metabolic_state
+
+    @metabolic_state.setter
+    def metabolic_state(self, value):
+        """
+        Setter for `metabolic_state`. If a range is provided, sample a starting float value;
+        otherwise, directly set it as a float.
+        """
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            # Sample a float value from the range
+            self._metabolic_state = float(np.random.uniform(value[0], value[1]))
+        elif isinstance(value, range):
+            # Sample a float value from a range object
+            self._metabolic_state = float(np.random.uniform(value.start, value.stop))
+        elif isinstance(value, (int, float)):
+            # Set directly as a float
+            self._metabolic_state = float(value)
+        else:
+            raise ValueError("`metabolic_state` must be a range, list, tuple, or single numeric value.")
+
+    # Method to update metabolic_state dynamically in the simulation
+    def update_metabolic_state(self, delta):
+        """
+        Update the metabolic state by a given delta.
+        """
+        self._metabolic_state += float(delta)
+            
+            
 
     def set_mass(self, body_size_range):
         mass = np.random.uniform(body_size_range)
