@@ -3,13 +3,39 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class EctothermMetabolism(object):
-    def __init__(self, X1_mass, X2_temp, X3_const):
+    def __init__(self, initial_metabolic_state, X1_mass, X2_temp, X3_const):
         self.mlo2_to_joules = 19.874
         self.joules_to_cals = 2.39e-4
         self.X1_mass = X1_mass
         self.X2_temp = X2_temp
         self.X3_const = X3_const
+        self._metabolic_state = None
+        self.metabolic_state = initial_metabolic_state
 
+    @property
+    def metabolic_state(self):
+        """
+        Getter for `metabolic_state`, returns the current float value.
+        """
+        return self._metabolic_state
+
+    @metabolic_state.setter
+    def metabolic_state(self, value):
+        """
+        Setter for `metabolic_state`. If a range is provided, sample a starting float value;
+        otherwise, directly set it as a float.
+        """
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            # Sample a float value from the range
+            self._metabolic_state = float(np.random.uniform(value[0], value[1]))
+        elif isinstance(value, range):
+            # Sample a float value from a range object
+            self._metabolic_state = float(np.random.uniform(value.start, value.stop))
+        elif isinstance(value, (int, float)):
+            # Set directly as a float
+            self._metabolic_state = float(value)
+        else:
+            raise ValueError("`metabolic_state` must be a range, list, tuple, or single numeric value.")
 
     def smr_eq(self, mass, temperature):
         '''This returns VO2 which is a proxy for SMR. 
@@ -89,6 +115,20 @@ class EctothermMetabolism(object):
         # Display the two heatmaps side by side
         plt.tight_layout()  # Adjust the layout so plots don't overlap
         plt.show()
+
+    def cals_lost(self, mass, temperature, activity_coeffcient):
+        '''
+        Helper function for energy expenditure of an individual dependent on their mass, body temperature, and what behavior they are doing.
+        '''
+        smr = self.smr_eq(mass=mass, temperature=temperature)
+        cals_spent = self.hourly_energy_expendeture(smr=smr, activity_coeffcient=activity_coeffcient)
+        self.metabolic_state -= cals_spent
+        return
+
+    def cals_gained(self, prey_mass):
+        cals_gained = self.energy_intake(prey_mass=prey_mass, cal_per_gram_conversion, percent_digestion_cals)
+        pass
+
 
 if __name__ ==  "__main__":
     met = EctothermMetabolism()
