@@ -125,8 +125,11 @@ class EctothermMetabolism(object):
         self.metabolic_state -= cals_spent
         return
 
-    def cals_gained(self, prey_mass):
-        cals_gained = self.energy_intake(prey_mass=prey_mass, cal_per_gram_conversion, percent_digestion_cals)
+    def cals_gained(self, prey_mass, cal_per_gram_conversion, percent_digestion_cals):
+        cals_gained = self.energy_intake(prey_mass=prey_mass,
+                                        cal_per_gram_conversion=cal_per_gram_conversion,
+                                        percent_digestion_cals=percent_digestion_cals)
+        self.metabolic_state += cals_gained
         pass
 
 
