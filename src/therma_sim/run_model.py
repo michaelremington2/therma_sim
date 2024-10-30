@@ -52,9 +52,11 @@ input_dictionary = {
                               'X1_mass':0.930,
                               'X2_temp': 0.044,
                               'X3_const': -2.58,
+                              'background_death_probability':0.001,
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
+                              'background_death_probability':0.001,
                               'moore': moore},
     'Interaction_Parameters':{'Rattlesnake_KangarooRat':{'Interaction_Distance':interaction_distance,
                                                          'Prey_Cals_per_gram': krat_cals_per_gram,
@@ -66,7 +68,7 @@ input_dictionary = {
 
 
 def main():
-    step_count = 10
+    step_count = 8750
     model = ThermaSim(config=input_dictionary,seed=42)
     model.run_model(step_count=step_count)
     # model_data = model.datacollector.get_model_vars_dataframe()

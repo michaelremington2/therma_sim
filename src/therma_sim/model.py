@@ -158,7 +158,7 @@ class ThermaSim(mesa.Model):
         puts snakes in a list and shuffles them
         '''
         snake_shuffle = list(self.schedule.agents_by_type[agents.Rattlesnake].values())
-        print(f'Snakes: {len(snake_shuffle)}')
+        #print(f'Snakes: {len(snake_shuffle)}')
         self.random.shuffle(snake_shuffle)
         return snake_shuffle
     

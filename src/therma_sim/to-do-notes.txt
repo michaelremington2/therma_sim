@@ -1,16 +1,29 @@
 # Model
 - TO DO!!!! Add checks that for pop count > 0
 - integrate new interaction parameters as input values
+- add birth rates
+- admixture rate (stepping stone model)
+- check yearly data to make sure its full year
 
 # metabolism
-- initiate metabolism for snakes
-- energy intake
-- set initial calories
+- Death and hunger states
 
 # rattlesnakes
-- add metabolism
-- take into account brumination
+
+- take into account brumination: On and off months
+- Maybe even do an on or off day
+- Potentially a daily active time
+- Background death rate
+- Admixture rate
 
 # kangaroo rats
+- Admixture rate
 
-- remove dead agents
+
+# Utility functions
+- maybe make a utility function script class
+
+
+#### Random thoughts
+- think about a nested sub game. rest vs active, if active, thermorgulate or forage
+- time dependend sub game

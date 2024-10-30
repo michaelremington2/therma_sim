@@ -107,7 +107,7 @@ class Rattlesnake(mesa.Agent):
         self._point = value
 
     def set_mass(self, body_size_range):
-        mass = np.random.uniform(body_size_range)
+        mass = np.random.uniform(min(body_size_range), max(body_size_range))
         return mass
 
     def generate_random_point(self):
@@ -342,35 +342,29 @@ class Rattlesnake(mesa.Agent):
     def print_history(self):
         print(self.behavior_history)
         print(self.microhabitat_history)
-            
-    ###########################################################
-    #
-    #### Main Functions
-    #
-    ###########################################################
     
     def is_starved(self):
-        pass
+        '''
+        Internal state function to switch the state of the agent from alive to dead when their energy drops below 0.
+        '''
+        if self.metabolism.metabolic_state>=0:
+            self.alive = False
 
     def move(self):
         pass
 
-    def cals_spent(self):
-        smr = self.metabolism.smr_eq(mass=self.mass, temperature=self.body_temperature)
-        activity_coefficient = self.get_activity_coefficent()
-        self.metabolism.hourly_energy_expendeture(smr=smr, activity_coefficient=activity_coefficient) 
-
     def step(self, availability_dict):
         self.activate_snake()
-        
         self.move()
         self.generate_random_point()
         overall_utility = self.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability_dict, behavior_preferences=self.behavior_weights)
         self.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
+        self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coeffcient=self.activity_coefficients[self.current_behavior])
         self.update_body_temp(t_env, delta_t=self.delta_t)
         self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
-        self.print_history()
+        print(f'Metabolic State {self.metabolism.metabolic_state}')
+        #self.print_history()
 
 
 class KangarooRat(mesa.Agent):
@@ -429,7 +423,7 @@ class KangarooRat(mesa.Agent):
         self.point = (x, y)
 
     def set_mass(self, body_size_range):
-        mass = np.random.uniform(body_size_range)
+        mass = np.random.uniform(min(body_size_range), max(body_size_range))
         return mass
     
     def activate_krat(self, hour):
