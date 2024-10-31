@@ -20,15 +20,7 @@ class ThermaSim(mesa.Model):
     '''
     def __init__(self, config, seed=None):
         self.config = config
-        # Need to check on these tomorrow 9/25
-
         self.initial_agents_dictionary = self.get_initial_population_params(config=self.config)
-        # self.thermal_profile = pd.read_csv(thermal_profile_csv_fp, header=0)
-        # self.interaction_dist = interaction_dist
-        # self.delta_t = delta_t #add deltat back in tomorrow
-        # self.moore = moore
-        # self.ks_interaction_module = sk_id.Interaction_Dynamics()
-        # 
         self.step_id = 0
         self.running = True
         self.seed = seed
@@ -47,11 +39,13 @@ class ThermaSim(mesa.Model):
         self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
         # Data collector
         self.datacollector = mesa.DataCollector(
-            model_reporters = {"Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
+            model_reporters = {'Step_ID': "step_id",
+                                "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
                                "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),},
             agent_reporters = {"Behavior": "current_behavior",
                                'Microhabitat': "current_microhabitat",
-                               'Body_Temperature': "Body_Temp"})
+                               'Body_Temperature': "Body_Temp",
+                               'Metabolic_State': lambda a: a.metabolism.metabolic_state if hasattr(a, 'metabolic_object') else None})
 
     @property
     def time_of_day(self):
@@ -238,7 +232,10 @@ class ThermaSim(mesa.Model):
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
 
-    def run_model(self, step_count=1000):
+    def run_model(self, step_count=None):
+        if step_count==None:
+            step_count = len(self.landscape.thermal_profile)
+
         for i in range(step_count):
             self.step()
             

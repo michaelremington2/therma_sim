@@ -28,8 +28,8 @@ krat_cals_per_gram = 1.38 # Technically for ground squirrels. Metric is from Cro
 digestion_efficency = 0.8 # Assumed rate of calorie assimilation. Metric is from crowell 2021
 performance_opt = 0.21 #From Grace, Rulon paper
 
-initial_population_sizes = {'KangarooRat': 1,
-                            'Rattlesnake': 1}
+initial_population_sizes = {'KangarooRat': 800,
+                            'Rattlesnake': 200}
 
 
 #Predator_Prey     
@@ -68,11 +68,13 @@ input_dictionary = {
 
 
 def main():
-    step_count = 8750
+    step_count = 1000
     model = ThermaSim(config=input_dictionary,seed=42)
-    model.run_model(step_count=step_count)
-    # model_data = model.datacollector.get_model_vars_dataframe()
-    # agent_data = model.datacollector.get_agent_vars_dataframe()
+    model.run_model() #step_count=step_count
+    model_data = model.datacollector.get_model_vars_dataframe()
+    agent_data = model.datacollector.get_agent_vars_dataframe()
+    model_data.to_csv("Output_Data/model_data.csv", index=False)
+    agent_data.to_csv("Output_Data/agent_data.csv", index=False)
 
     # print(model_data)
     # print(agent_data)

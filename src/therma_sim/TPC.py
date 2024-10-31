@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import numpy as np
 
-def sharpe_schoolfield(self, T, R_ref, E_A, E_L, T_L, E_H, T_H, T_ref):
+def sharpe_schoolfield(T, R_ref, E_A, E_L, T_L, E_H, T_H, T_ref):
     '''
     Inputs:
         T:

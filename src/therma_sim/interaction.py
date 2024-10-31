@@ -52,7 +52,8 @@ class Interaction_Dynamics(object):
                 krat_point = krat.point
                 interaction = self.check_for_interaction(snake_point=snake_point, krat_point=krat_point)
                 if interaction:
-                    self.strike_module()
+                    print('Strike!')
+                    self.strike_module(krat=krat, snake=snake)
 
     def strike_module(self, krat, snake):
         '''
@@ -68,12 +69,13 @@ class Interaction_Dynamics(object):
                                                 performance_opt=snake.strike_performance_opt)
         random_value = random.random()
         if random_value <= strike_probability:
+            print('Successful Strike!')
             # Strike occurs
             prey_mass = krat.mass
             snake.metabolism.cals_gained(prey_mass=prey_mass,
                                            cal_per_gram_conversion=self.calories_per_gram ,
                                            percent_digestion_cals=self.digestion_efficiency)
-            krat.dead(value=True)        
+            krat.alive = False       
 
     def strike_tpc_ss(self, body_temp, t_pref_min, t_pref_max, t_opt, performance_opt):
         """

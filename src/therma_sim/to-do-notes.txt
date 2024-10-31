@@ -1,9 +1,12 @@
 # Model
 - TO DO!!!! Add checks that for pop count > 0
-- integrate new interaction parameters as input values
 - add birth rates
 - admixture rate (stepping stone model)
 - check yearly data to make sure its full year
+    - Yearly data is not a full year. Check with ryan if there is new data.
+- RUn an experiment to collect data where there is 1 snake and 30 krats
+- kill individuals with a background probablity
+- 
 
 # metabolism
 - Death and hunger states
