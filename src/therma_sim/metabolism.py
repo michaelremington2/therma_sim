@@ -129,8 +129,10 @@ class EctothermMetabolism(object):
         cals_gained = self.energy_intake(prey_mass=prey_mass,
                                         cal_per_gram_conversion=cal_per_gram_conversion,
                                         percent_digestion_cals=percent_digestion_cals)
-        self.metabolic_state += cals_gained
-        pass
+        # print(f'Cals_gained {cals_gained}, metabolic state_ before {self.metabolic_state}')
+        # self.metabolic_state += cals_gained
+        # print(f'Cals_gained {cals_gained}, metabolic state_ after {self.metabolic_state}')
+
 
 
 if __name__ ==  "__main__":

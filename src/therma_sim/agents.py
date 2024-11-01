@@ -199,12 +199,13 @@ class Rattlesnake(mesa.Agent):
     def move(self):
         pass
 
-    def step(self, availability_dict):
+    def step(self):
         self.is_starved()
         self.activate_snake()
         self.move()
         self.generate_random_point()
-        overall_utility = self.utility_module.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability_dict, behavior_preferences=self.behavior_weights)
+        availability = self.model.landscape.get_mh_availability_dict(pos=self.pos)
+        overall_utility = self.utility_module.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability, behavior_preferences=self.behavior_weights)
         self.current_behavior, self.current_microhabitat = self.utility_module.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
         self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coeffcient=self.activity_coefficients[self.current_behavior])
@@ -282,7 +283,8 @@ class KangarooRat(mesa.Agent):
     def move(self):
         pass
 
-    def step(self, hour):
+    def step(self):
+        hour = self.model.landscape.thermal_profile['hour'].iloc[self.model.step_id]
         self.activate_krat(hour=hour)
         if self.active:
             self.generate_random_point()

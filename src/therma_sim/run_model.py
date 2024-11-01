@@ -1,4 +1,5 @@
 from model import ThermaSim
+import agents
 
 ### Population sizes are set as individuals per hectFalseare
 
@@ -42,7 +43,7 @@ input_dictionary = {
     'Initial_Population_Sizes': initial_population_sizes,
     'Rattlesnake_Parameters':{'Body_sizes':snake_body_sizes,
                               'Initial_Body_Temperature': initial_body_temperature,
-                              'initial_calories': 300,
+                              'initial_calories': range(300,600),
                               'k': k,
                               't_pref_min': t_pref_min,
                               't_pref_max': t_pref_max,
@@ -70,11 +71,12 @@ input_dictionary = {
 def main():
     step_count = 1000
     model = ThermaSim(config=input_dictionary,seed=42)
-    model.run_model() #step_count=step_count
+    model.run_model(step_count=step_count) #
     model_data = model.datacollector.get_model_vars_dataframe()
-    agent_data = model.datacollector.get_agent_vars_dataframe()
+    rattlesnake_data = model.datacollector.get_agenttype_vars_dataframe(agents.Rattlesnake)
+
     model_data.to_csv("Output_Data/model_data.csv", index=False)
-    agent_data.to_csv("Output_Data/agent_data.csv", index=False)
+    rattlesnake_data.to_csv("Output_Data/agent_data.csv", index=False)
 
     # print(model_data)
     # print(agent_data)

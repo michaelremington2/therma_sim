@@ -39,13 +39,29 @@ class ThermaSim(mesa.Model):
         self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
         # Data collector
         self.datacollector = mesa.DataCollector(
-            model_reporters = {'Step_ID': "step_id",
-                                "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
-                               "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),},
-            agent_reporters = {"Behavior": "current_behavior",
-                               'Microhabitat': "current_microhabitat",
-                               'Body_Temperature': "Body_Temp",
-                               'Metabolic_State': lambda a: a.metabolism.metabolic_state if hasattr(a, 'metabolic_object') else None})
+            model_reporters={
+                'Step_ID': lambda m: m.step_id,
+                "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
+                "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),
+            },
+            agenttype_reporters={
+                agents.Rattlesnake: {
+                    "Time_Step": lambda a: a.model.step_id,
+                    "Agent_ID": lambda a: a.unique_id,
+                    "Behavior": lambda a: a.current_behavior,
+                    "Microhabitat": lambda a: a.current_microhabitat,
+                    "Body_Temperature": lambda a: a.body_temperature,
+                    "Metabolic_State": lambda a: a.metabolism.metabolic_state,
+                },
+                # agents.KangarooRat: {
+                #     "Time_Step": lambda a: a.model.step_id,
+                #     "Agent_ID": lambda a: a.unique_id,
+                #     "Active_Hours": lambda a: a.active_hours,
+                #     # Add more KangarooRat-specific reporters as needed
+                # }
+            }
+        )
+
 
     @property
     def time_of_day(self):
@@ -211,26 +227,24 @@ class ThermaSim(mesa.Model):
         Main model step function used to run one step of the model.
         '''
         self.time_of_day = self.landscape.thermal_profile['hour'].iloc[self.step_id]
+        self.datacollector.collect(self)
         #print(f'Hour: {self.time_of_day}')
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         #self.schedule.step()
         # Snakes
         snake_shuffle = self.randomize_snakes()
         for snake in snake_shuffle:
-            availability = self.landscape.get_mh_availability_dict(pos=snake.pos)
-            snake.step(availability_dict = availability)
-            #agent.eat()
-            #agent.maybe_die()
+            snake.step()
         snake_shuffle = self.randomize_snakes()
         # Krats
         krat_shuffle = self.randomize_krats()
         for krat in krat_shuffle:
-            krat.step(hour = self.time_of_day)
+            krat.step()
         krat_shuffle = self.randomize_krats()
         self.kr_rs_interaction_module.interaction_module()
-        self.datacollector.collect(self)
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
+        self.schedule.step()
 
     def run_model(self, step_count=None):
         if step_count==None:
