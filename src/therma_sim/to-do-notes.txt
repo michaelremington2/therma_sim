@@ -6,7 +6,7 @@
     - Yearly data is not a full year. Check with ryan if there is new data.
 - RUn an experiment to collect data where there is 1 snake and 30 krats
 - kill individuals with a background probablity
-- 
+- work time of day and date into data
 
 # metabolism
 - Death and hunger states
