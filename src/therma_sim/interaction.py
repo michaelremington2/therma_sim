@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import TPC
 import math
-import random
+import numpy as np
 
 class Interaction_Dynamics(object):
     '''
@@ -67,7 +67,7 @@ class Interaction_Dynamics(object):
                                                 t_pref_max=snake.t_pref_max, 
                                                 t_opt= snake.t_pref_min, 
                                                 performance_opt=snake.strike_performance_opt)
-        random_value = random.random()
+        random_value = np.random.random()
         if random_value <= strike_probability:
             #print('Successful Strike!')
             # Strike occurs

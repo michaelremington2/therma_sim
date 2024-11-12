@@ -2,8 +2,28 @@
 import numpy as np
 
 class Utiility(object):
-    def __init__(self, snake):
+    def __init__(self, snake, _statitc_utility_test=False):
         self.snake = snake
+        self._statitc_utility_test = _statitc_utility_test
+
+    ########################################################################################################
+    #
+    #### Utility Functions
+    #
+    ########################################################################################################
+
+    def thermo_accuracy_calc(self, t_pref_min, t_pref_max, t_body):
+        if t_body < t_pref_min:
+            db = np.abs(float(t_pref_min) - float(t_body))
+            state = 'cold'
+        elif t_body > t_pref_max:
+            db = np.abs(float(t_pref_max) - float(t_body))
+            state = 'hot'
+        else:
+            db = 0.0
+            state = 'neutral'
+        return db, state
+
 
     ########################################################################################################
     #
@@ -18,21 +38,9 @@ class Utiility(object):
             - Init
         '''
         utility_scores = {
-            'Shrub': {
-                'Rest': 0,
-                'Forage': 4,
-                'Thermoregulate': 4,
-            },
-            'Open': {
-                'Rest': 0,
-                'Forage': 4,
-                'Thermoregulate': 4,
-            },
-            'Burrow': {
-                'Rest': 5,
-                'Forage': 0,
-                'Thermoregulate': 2
-            }
+            'Shrub': {'Rest': 0,'Forage': 4,'Thermoregulate': 4,},
+            'Open': {'Rest': 0, 'Forage': 4, 'Thermoregulate': 4,},
+            'Burrow': {'Rest': 5,'Forage': 0,'Thermoregulate': 2}
         }
         return utility_scores
     
@@ -86,21 +94,9 @@ class Utiility(object):
         This function returns a static dictionary of unadjusted expected utility scores.
         '''
         utility_scores = {
-            'Rest': {
-                'Shrub': 0,
-                'Open': 0,
-                'Burrow': 5,
-            },
-            'Forage': {
-                'Shrub': 4,
-                'Open': 4,
-                'Burrow': 0,
-            },
-            'Thermoregulate': {
-                'Shrub': 4,
-                'Open': 4,
-                'Burrow': 2,
-            }
+            'Rest': {'Shrub': 0,'Open': 0,'Burrow': 5,},
+            'Forage': {'Shrub': 4,'Open': 4,'Burrow': 0,},
+            'Thermoregulate': {'Shrub': 4,'Open': 4,'Burrow': 2,}
         }
         return utility_scores
 

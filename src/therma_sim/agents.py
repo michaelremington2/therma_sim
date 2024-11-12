@@ -27,6 +27,8 @@ class Rattlesnake(mesa.Agent):
                                                          X3_const=self.snake_config['X3_const'])
         self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
         self.moore = self.snake_config['moore']
+        self.burmination_months = self.snake_config['brumination_months']
+        self.background_death_probability = self.snake_config['background_death_probability']
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
@@ -88,7 +90,10 @@ class Rattlesnake(mesa.Agent):
 
     @active.setter
     def active(self, value):
-        self._active = value
+        if self.model.month in self.burmination_months:
+            self._active = False
+        else:
+            self._active = value
 
     @property
     def alive(self):
@@ -196,10 +201,19 @@ class Rattlesnake(mesa.Agent):
         if self.metabolism.metabolic_state<=0:
             self.alive = False
 
+    def random_death(self):
+        '''
+        Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
+        '''
+        random_val = np.random.random()
+        if random_val <= self.background_death_probability:
+            self.alive = False
+
     def move(self):
         pass
 
     def step(self):
+        self.random_death()
         self.is_starved()
         self.activate_snake()
         self.move()
@@ -228,8 +242,8 @@ class KangarooRat(mesa.Agent):
         self.active_hours = self.krat_config['active_hours']
         self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
         self.moore = self.krat_config['moore']
-        
-
+        self.background_death_probability = self.krat_config['background_death_probability']
+    
         # Agent is actively foraging
         self._point = None
         self._active = False
@@ -280,11 +294,20 @@ class KangarooRat(mesa.Agent):
         else:
             self.active = False
     
+    def random_death(self):
+        '''
+        Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
+        '''
+        random_val = np.random.random()
+        if random_val <= self.background_death_probability:
+            self.alive = False
+    
     def move(self):
         pass
 
     def step(self):
         hour = self.model.landscape.thermal_profile['hour'].iloc[self.model.step_id]
+        self.random_death()
         self.activate_krat(hour=hour)
         if self.active:
             self.generate_random_point()

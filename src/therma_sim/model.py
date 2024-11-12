@@ -25,6 +25,7 @@ class ThermaSim(mesa.Model):
         self.running = True
         self.seed = seed
         self._time_of_day = None
+        self._month = None
         if seed is not None:
             np.random.seed(self.seed)
         
@@ -36,30 +37,30 @@ class ThermaSim(mesa.Model):
         self.landscape = self.make_landscape(model=self)
         self.kr_rs_interaction_module = self.make_interaction_module(model=self)
         ## Intialize agents
-        self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
+        self.landscape.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
         # Data collector
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 'Step_ID': lambda m: m.step_id,
-                "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
-                "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),
+                #"Rattlesnakes": lambda m: min(m.schedule.get_type_count(agents.Rattlesnake), 0),
+                #"Krats": lambda m: min(m.schedule.get_type_count(agents.KangarooRat), 0),
             },
-            agenttype_reporters={
-                agents.Rattlesnake: {
-                    "Time_Step": lambda a: a.model.step_id,
-                    "Agent_ID": lambda a: a.unique_id,
-                    "Behavior": lambda a: a.current_behavior,
-                    "Microhabitat": lambda a: a.current_microhabitat,
-                    "Body_Temperature": lambda a: a.body_temperature,
-                    "Metabolic_State": lambda a: a.metabolism.metabolic_state,
-                },
-                # agents.KangarooRat: {
+            # agenttype_reporters={
+            #     agents.Rattlesnake: {
+            #         "Time_Step": lambda a: a.model.step_id,
+            #         "Agent_ID": lambda a: a.unique_id,
+            #         "Behavior": lambda a: a.current_behavior,
+            #         "Microhabitat": lambda a: a.current_microhabitat,
+            #         "Body_Temperature": lambda a: a.body_temperature,
+            #         "Metabolic_State": lambda a: a.metabolism.metabolic_state,
+            #     },
+            #     # agents.KangarooRat: {
                 #     "Time_Step": lambda a: a.model.step_id,
                 #     "Agent_ID": lambda a: a.unique_id,
                 #     "Active_Hours": lambda a: a.active_hours,
                 #     # Add more KangarooRat-specific reporters as needed
                 # }
-            }
+            #}
         )
 
 
@@ -70,6 +71,14 @@ class ThermaSim(mesa.Model):
     @time_of_day.setter
     def time_of_day(self, value):
         self._time_of_day = value
+
+    @property
+    def month(self):
+        return self._month
+
+    @month.setter
+    def month(self, value):
+        self._month = value
 
     def get_landscape_params(self, config):
         return config['Landscape_Parameters']
@@ -91,11 +100,11 @@ class ThermaSim(mesa.Model):
         Helper function for intializing the landscape class
         '''
         ls_params = self.get_landscape_params(config = self.config)
-        return landscape.Landscape(model = model, 
-                                   thermal_profile_csv_fp = ls_params['Thermal_Database_fp'],
-                                   width=ls_params['Width'],
-                                   height=ls_params['Height'],
-                                   torus=ls_params['torus'])
+        return landscape.Continous_Landscape(model = model, 
+                                            thermal_profile_csv_fp = ls_params['Thermal_Database_fp'],
+                                            width=ls_params['Width'],
+                                            height=ls_params['Height'],
+                                            torus=ls_params['torus'])
 
     def make_interaction_module(self, model):
         '''
@@ -122,39 +131,6 @@ class ThermaSim(mesa.Model):
                 calories_per_gram=prey_cals_per_gram, 
                 digestion_efficiency=digestion_efficiency
         )
-    
-    def initialize_populations(self, initial_agent_dictionary):
-        rs_params = self.get_rattlesnake_params(config=self.config)
-        kr_params = self.get_krat_params(config=self.config)
-        agent_id = 0
-        for species, initial_population_size in initial_agent_dictionary.items():
-            for x in range(self.landscape.width):
-                for y in range(self.landscape.height):
-                    for i in range(int(initial_population_size)):
-                        pos = (x,y)
-                        #print(pos,agent_id)
-                        if species=='KangarooRat':
-                            # Create agent
-                            krat = agents.KangarooRat(unique_id = agent_id, 
-                                                        model = self,
-                                                        initial_pos = pos,
-                                                        krat_config=kr_params)
-                            # place agent
-                            self.landscape.place_agent(krat, pos)
-                            self.schedule.add(krat)
-                            agent_id += 1
-                        elif species=='Rattlesnake':
-                            # Create agent
-                            snake = agents.Rattlesnake(unique_id = agent_id, 
-                                                        model = self,
-                                                        initial_pos = pos,
-                                                        snake_config = rs_params)
-                            # place agent
-                            self.landscape.place_agent(snake, pos)
-                            self.schedule.add(snake)
-                            agent_id += 1
-                        else:
-                            raise ValueError(f'Class for species: {species} DNE')
                 
     def useful_check_landscape_functions(self, property_layer_name):
         self.landscape.visualize_property_layer('Open_Microhabitat')
@@ -212,7 +188,9 @@ class ThermaSim(mesa.Model):
         return active_krats
     
     def remove_dead_agents(self):
-        # Create a list of agents to remove
+        '''
+        Helper function: Create a list of agents to remove because they are dead
+        '''
         dead_snakes = [snake for snake in self.schedule.agents_by_type[agents.Rattlesnake].values() if not snake.alive]
         for snake in dead_snakes:
             self.schedule.remove(snake)
@@ -227,10 +205,9 @@ class ThermaSim(mesa.Model):
         Main model step function used to run one step of the model.
         '''
         self.time_of_day = self.landscape.thermal_profile['hour'].iloc[self.step_id]
+        self.month = self.landscape.thermal_profile['month'].iloc[self.step_id]
         self.datacollector.collect(self)
-        #print(f'Hour: {self.time_of_day}')
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
-        #self.schedule.step()
         # Snakes
         snake_shuffle = self.randomize_snakes()
         for snake in snake_shuffle:
@@ -247,8 +224,12 @@ class ThermaSim(mesa.Model):
         self.schedule.step()
 
     def run_model(self, step_count=None):
-        if step_count==None:
-            step_count = len(self.landscape.thermal_profile)
+        max_steps = len(self.landscape.thermal_profile)-1
+        if step_count is None:
+            step_count = max_steps
+        elif max_steps <= step_count:
+            print(f'Step argument exceeds length of data. Using {max_steps} instead.')
+            step_count=max_steps
 
         for i in range(step_count):
             self.step()

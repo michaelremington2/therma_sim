@@ -1,19 +1,77 @@
+
+
+### Main To Do 
+1) BUild a continuous movement class
+    - Rethank scale
+    32 x 32 hectares
+    - make a movement function
+    - get neighbors
+    - initial positions
+        - 1 snake per about 2 hectares
+        - 10 28 kangaroo rats per hectare
+    - temperature will just be open and burrow 
+    - change language from open and burrow to thermal refuge and open
+2) set individuals per hectare to be a lot lower
+3) Add in birth model
+4) Research pop sizes and birth rates
+5) Look at foraging models again
+
+
+
 # Model
 - TO DO!!!! Add checks that for pop count > 0
 - add birth rates
 - admixture rate (stepping stone model)
 - check yearly data to make sure its full year
     - Yearly data is not a full year. Check with ryan if there is new data.
-- RUn an experiment to collect data where there is 1 snake and 30 krats
-- kill individuals with a background probablity
 - work time of day and date into data
 
+# Croalatus viridis pop size look through literature # 2.4 to 16.9 snakes per hectare
+- 150 snakes per den, moving occupy a space 5000 hectares
+- 1 snake per 5 hectares
+
+- holes and shrubs for thermo refugia 
+- time at night for thermal active positions
+- Active season burrow
+- Any given night they are active 3 hours a night for k rats
+    - 
+
+- 2 -3 liters per year for ords
+- 2 new snake babies on average
+
+- Maybe think of simulating multiple years
+- look up birthd rates for snakes and krats in literature
+
+
+# General probability of a snake and a kangaroo rat coming into contact
+
+
+
+texas: 3 squarekalometers 150 1 snake per every 3 hectares
+Nebraska: 
+
+Maybe treat pop size as equal
+
+Potentially look at croatlus oreganus
+
+
+- population estimates for ordaii 7- 10 per hectare
+# 
+
+# Utility
+- Thermoregulate
+    - calculate de 
+    - low values of de = low values of utility for the need to thermorgulate
+- forage
+    - Values of metabolic state being close to zero 
+- rest
+    - maybe keep constant?
+
 # metabolism
-- Death and hunger states
+
 
 # rattlesnakes
 
-- take into account brumination: On and off months
 - Maybe even do an on or off day
 - Potentially a daily active time
 - Background death rate

@@ -7,8 +7,8 @@ import agents
 thermal_data_profile_fp = 'Data/Texas-Marathon_data.csv'
 torus = False
 moore = False
-width=1
-height=1
+width=320000 # 32 hectares to 320000 meters
+height=320000 # 32 hectares to 320000 meters
 
 # Rattlesnake Parameters
 snake_body_sizes = range(370,790+1)
@@ -29,8 +29,8 @@ krat_cals_per_gram = 1.38 # Technically for ground squirrels. Metric is from Cro
 digestion_efficency = 0.8 # Assumed rate of calorie assimilation. Metric is from crowell 2021
 performance_opt = 0.21 #From Grace, Rulon paper
 
-initial_population_sizes = {'KangarooRat': 800,
-                            'Rattlesnake': 200}
+initial_population_sizes = {'KangarooRat': range(3,14),
+                            'Rattlesnake': range(0,1)}# Individuals per hectare
 
 
 #Predator_Prey     
@@ -53,17 +53,17 @@ input_dictionary = {
                               'X1_mass':0.930,
                               'X2_temp': 0.044,
                               'X3_const': -2.58,
-                              'background_death_probability':0.001,
+                              'background_death_probability':0.000001,
+                              'brumination_months': [10, 11, 12, 1, 2, 3, 4],
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
-                              'background_death_probability':0.001,
+                              'background_death_probability':0.0000001,
                               'moore': moore},
     'Interaction_Parameters':{'Rattlesnake_KangarooRat':{'Interaction_Distance':interaction_distance,
                                                          'Prey_Cals_per_gram': krat_cals_per_gram,
                                                          'Digestion_Efficency':digestion_efficency,}
                             }
-
 }
 
 
@@ -71,7 +71,7 @@ input_dictionary = {
 def main():
     step_count = 1000
     model = ThermaSim(config=input_dictionary,seed=42)
-    model.run_model(step_count=step_count) #
+    model.run_model() #step_count=step_count
     model_data = model.datacollector.get_model_vars_dataframe()
     rattlesnake_data = model.datacollector.get_agenttype_vars_dataframe(agents.Rattlesnake)
 
