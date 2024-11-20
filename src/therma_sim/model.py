@@ -42,25 +42,25 @@ class ThermaSim(mesa.Model):
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 'Step_ID': lambda m: m.step_id,
-                #"Rattlesnakes": lambda m: min(m.schedule.get_type_count(agents.Rattlesnake), 0),
-                #"Krats": lambda m: min(m.schedule.get_type_count(agents.KangarooRat), 0),
+                "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
+                "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),
             },
-            # agenttype_reporters={
-            #     agents.Rattlesnake: {
-            #         "Time_Step": lambda a: a.model.step_id,
-            #         "Agent_ID": lambda a: a.unique_id,
-            #         "Behavior": lambda a: a.current_behavior,
-            #         "Microhabitat": lambda a: a.current_microhabitat,
-            #         "Body_Temperature": lambda a: a.body_temperature,
-            #         "Metabolic_State": lambda a: a.metabolism.metabolic_state,
-            #     },
-            #     # agents.KangarooRat: {
+            agenttype_reporters={
+                agents.Rattlesnake: {
+                    "Time_Step": lambda a: a.model.step_id,
+                    "Agent_ID": lambda a: a.unique_id,
+                    "Behavior": lambda a: a.current_behavior,
+                    "Microhabitat": lambda a: a.current_microhabitat,
+                    "Body_Temperature": lambda a: a.body_temperature,
+                    "Metabolic_State": lambda a: a.metabolism.metabolic_state,
+                },
+                # agents.KangarooRat: {
                 #     "Time_Step": lambda a: a.model.step_id,
                 #     "Agent_ID": lambda a: a.unique_id,
                 #     "Active_Hours": lambda a: a.active_hours,
                 #     # Add more KangarooRat-specific reporters as needed
                 # }
-            #}
+            }
         )
 
 

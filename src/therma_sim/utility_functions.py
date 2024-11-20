@@ -38,7 +38,6 @@ class Utiility(object):
             - Init
         '''
         utility_scores = {
-            'Shrub': {'Rest': 0,'Forage': 4,'Thermoregulate': 4,},
             'Open': {'Rest': 0, 'Forage': 4, 'Thermoregulate': 4,},
             'Burrow': {'Rest': 5,'Forage': 0,'Thermoregulate': 2}
         }
@@ -94,9 +93,9 @@ class Utiility(object):
         This function returns a static dictionary of unadjusted expected utility scores.
         '''
         utility_scores = {
-            'Rest': {'Shrub': 0,'Open': 0,'Burrow': 5,},
-            'Forage': {'Shrub': 4,'Open': 4,'Burrow': 0,},
-            'Thermoregulate': {'Shrub': 4,'Open': 4,'Burrow': 2,}
+            'Rest': {'Open': 0,'Burrow': 5,},
+            'Forage': {'Open': 4,'Burrow': 0,},
+            'Thermoregulate': {'Open': 3,'Burrow': 3,}
         }
         return utility_scores
 

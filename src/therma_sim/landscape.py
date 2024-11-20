@@ -15,8 +15,26 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
         self.hectare_to_meter = 10000
         self.width_hectare = self.meters_to_hectares(val=self.width)
         self.height_hectare = self.meters_to_hectares(val=self.height)
-        self.microhabitats = ['Refugia', 'Open']
+        self.microhabitats = ['Burrow', 'Open']
         self.thermal_profile = pd.read_csv(thermal_profile_csv_fp, header=0)
+        self._burrow_temperature = None
+        self._open_temperature = None
+
+    @property
+    def burrow_temperature(self):
+        return self._burrow_temperature
+
+    @burrow_temperature.setter
+    def burrow_temperature(self, value):
+        self._burrow_temperature = value
+
+    @property
+    def open_temperature(self):
+        return self._open_temperature
+
+    @open_temperature.setter
+    def open_temperature(self, value):
+        self._open_temperature = value
 
     def meters_to_hectares(self, val):
         '''Val is any value in meters you need to conver to hectares'''
@@ -30,30 +48,31 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
         rs_params = self.model.get_rattlesnake_params(config=self.model.config)
         kr_params = self.model.get_krat_params(config=self.model.config)
         agent_id = 0
-        for x_hect in range(self.width, self.hectare_to_meter):
-            for y_hect in range(self.height, self.hectare_to_meter):
+        for x_hect in range(0,self.width, self.hectare_to_meter):
+            for y_hect in range(0,self.height, self.hectare_to_meter):
                 for species, initial_population_size_range in initial_agent_dictionary.items():
-                    initial_pop_size = np.random.uniform(initial_population_size_range)
-                    print(f'x_hect {x_hect}, y_hect{y_hect}, initial_pop {initial_pop_size}')
-                    for i in initial_pop_size:
+                    start, stop = initial_population_size_range.start, initial_population_size_range.stop
+                    initial_pop_size = round(np.random.uniform(start, stop))
+                    print(f'species {species}\{initial_population_size_range}, initial_pop {initial_pop_size}, x_hect {x_hect}, y_hect {y_hect}')
+                    for i in range(initial_pop_size):
                         x = np.random.uniform(x_hect, x_hect + self.hectare_to_meter)
                         y = np.random.uniform(y_hect, y_hect + self.hectare_to_meter)
                         pos = (x,y)
                         #print(pos,agent_id)
-                        if species=='KangarooRat'and initial_pop_size != 0:
+                        if species=='KangarooRat':
                             # Create agent
                             krat = agents.KangarooRat(unique_id = agent_id, 
-                                                        model = self,
+                                                        model = self.model,
                                                         initial_pos = pos,
                                                         krat_config=kr_params)
                             # place agent
                             self.place_agent(krat, pos)
                             self.model.schedule.add(krat)
                             agent_id += 1
-                        elif species=='Rattlesnake' and initial_pop_size != 0:
+                        elif species=='Rattlesnake':
                             # Create agent
                             snake = agents.Rattlesnake(unique_id = agent_id, 
-                                                        model = self,
+                                                        model = self.model,
                                                         initial_pos = pos,
                                                         snake_config = rs_params)
                             # place agent
@@ -74,10 +93,26 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
         right now, assuming individuals always have access to any microhabitat
         '''
         availability = {
-            'Refugia':1,
+            'Burrow':1,
             'Open': 1,
         }
         return availability 
+
+    def set_landscape_temperatures(self, step_id, spatial_heterogeonus=False):
+        '''
+        Helper function for setting and resetting the thermal temperatures in the landscape
+        '''
+        ## Come up with a method w
+        ### Maybe switch to 2 state model or 3 state model
+        # shrub_emp_mean = self.thermal_profile['Shrub_mean_Temperature'].iloc[step_id]
+        # shrub_emp_std = self.thermal_profile['Shrub_stddev_Temperature'].iloc[step_id]
+        open_emp_mean = self.thermal_profile['Open_mean_Temperature'].iloc[step_id]
+        open_emp_std = self.thermal_profile['Open_stddev_Temperature'].iloc[step_id]
+        burrow_emp_mean = self.thermal_profile['Burrow_mean_Temperature'].iloc[step_id]
+        burrow_emp_std = self.thermal_profile['Burrow_stddev_Temperature'].iloc[step_id]
+        self.open_temperature = open_emp_mean
+        self.burrow_temperature = burrow_emp_mean
+
 
 
 class Discrete_Landscape(mesa.space.MultiGrid):
@@ -133,10 +168,12 @@ class Discrete_Landscape(mesa.space.MultiGrid):
         layer = self.get_property_layer(property_name=property_name)
         layer.set_cell(pos, property_value)
 
-    def set_landscape_temperatures(self, step_id):
+    def set_landscape_temperatures(self, step_id, spatial_heterogeonus=False):
         '''
         Helper function for setting and resetting the thermal temperatures in the landscape
         '''
+        ## Come up with a method w
+        ### Maybe switch to 2 state model or 3 state model
         shrub_emp_mean = self.thermal_profile['Shrub_mean_Temperature'].iloc[step_id]
         shrub_emp_std = self.thermal_profile['Shrub_stddev_Temperature'].iloc[step_id]
         open_emp_mean = self.thermal_profile['Open_mean_Temperature'].iloc[step_id]

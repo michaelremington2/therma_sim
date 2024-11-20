@@ -137,11 +137,11 @@ class Rattlesnake(mesa.Agent):
     
     def get_t_env(self, current_microhabitat):
         if current_microhabitat=='Burrow':
-            t_env = self.model.landscape.get_property_attribute(property_name='Burrow_Temp', pos=self.pos)
+            t_env = self.model.landscape.burrow_temperature
         elif current_microhabitat=='Open':
-            t_env = self.model.landscape.get_property_attribute(property_name='Open_Temp', pos=self.pos)
-        elif current_microhabitat=='Shrub':
-            t_env = self.model.landscape.get_property_attribute(property_name='Shrub_Temp', pos=self.pos)
+            t_env = self.model.landscape.burrow_temperature
+        # elif current_microhabitat=='Shrub':
+        #     t_env = self.model.landscape.get_property_attribute(property_name='Shrub_Temp', pos=self.pos)
         else:
             raise ValueError('Microhabitat Property Value cant be found')
         return t_env
