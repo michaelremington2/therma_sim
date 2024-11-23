@@ -55,10 +55,28 @@ input_dictionary = {
                               'X3_const': -2.58,
                               'background_death_probability':0.000001,
                               'brumination_months': [10, 11, 12, 1, 2, 3, 4],
+                              'birth_module': {
+                                            "frequency": "biannual",
+                                            "mean_litter_size": 4.6,
+                                            "std_litter_size": 0.31,
+                                            "upper_bound_litter_size": 8,
+                                            "lower_bound_litter_size": 2,
+                                            "litters_per_year": 0.5,
+                                            "partuition_months": [9, 10]
+                                            },
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
                               'background_death_probability':0.0000001,
+                              'birth_module': {
+                                            "frequency": "monthly",
+                                            "mean_litter_size": 3.5,
+                                            "std_litter_size": 1,
+                                            "upper_bound_litter_size": 6,
+                                            "lower_bound_litter_size": 1,
+                                            "litters_per_year": range(1,2),
+                                            "partuition_months": [8, 9, 10, 11, 12, 1, 2, 3, 4, 5]
+                                            },
                               'moore': moore},
     'Interaction_Parameters':{'Rattlesnake_KangarooRat':{'Interaction_Distance':interaction_distance,
                                                          'Prey_Cals_per_gram': krat_cals_per_gram,

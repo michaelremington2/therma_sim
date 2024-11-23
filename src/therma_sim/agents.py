@@ -17,10 +17,11 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, initial_pos,  snake_config):
+    def __init__(self, unique_id, model, initial_pos, snake_config):
         super().__init__(unique_id, model)
         self.pos = initial_pos
         self.snake_config = snake_config
+        self.sex = np.random.choice(['Male', 'Female'], 1)[0]
         self.metabolism = metabolism.EctothermMetabolism(initial_metabolic_state=self.snake_config['initial_calories'],
                                                          X1_mass=self.snake_config['X1_mass'],
                                                          X2_temp=self.snake_config['X2_temp'],
@@ -243,6 +244,7 @@ class KangarooRat(mesa.Agent):
         self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
         self.moore = self.krat_config['moore']
         self.background_death_probability = self.krat_config['background_death_probability']
+        self.sex = np.random.choice(['Male', 'Female'], 1)[0]
     
         # Agent is actively foraging
         self._point = None

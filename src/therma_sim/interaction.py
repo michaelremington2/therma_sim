@@ -2,6 +2,7 @@
 import TPC
 import math
 import numpy as np
+import agents
 
 class Interaction_Dynamics(object):
     '''
@@ -24,7 +25,7 @@ class Interaction_Dynamics(object):
         self.digestion_efficiency = digestion_efficiency
 
                     
-    def check_for_interaction(self, snake_point, krat_point):
+    def check_for_interaction_retired(self, snake_point, krat_point):
         '''
         Helper function in the interaction model to test if a snake agent interacts with a krat agent
         '''
@@ -44,16 +45,14 @@ class Interaction_Dynamics(object):
         Main interaction model between agents. The model simulates point locations within a hectare then checks if a snake and a krat agent 
         are within striking distance of eachother if they are active.
         '''
-        active_krats = self.model.randomize_active_krats()
         active_snakes = self.model.randomize_active_snakes()
         for snake in active_snakes:
-            for krat in active_krats:
-                snake_point = snake.point
-                krat_point = krat.point
-                interaction = self.check_for_interaction(snake_point=snake_point, krat_point=krat_point)
-                if interaction:
-                    #print('Strike!')
-                    self.strike_module(krat=krat, snake=snake)
+            center_pos = snake.pos
+            neighbors = self.model.landscape.get_neighbors(center_pos, radius=self.interaction_distance, include_center=False)
+            potential_prey = [agent for agent in neighbors if isinstance(agent, agents.KangarooRat) and agent.active]
+            if len(potential_prey)>0:
+                krat = np.random.choice(potential_prey)
+                self.strike_module(krat=krat, snake=snake)
 
     def strike_module(self, krat, snake):
         '''
