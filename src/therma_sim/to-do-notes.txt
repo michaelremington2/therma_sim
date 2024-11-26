@@ -1,22 +1,14 @@
 
 
 ### Main To Do 
-1) BUild a continuous movement class
-    - Rethank scale
-    32 x 32 hectares
-    - make a movement function
-    - get neighbors
-    - initial positions
-        - 1 snake per about 2 hectares
-        - 10 28 kangaroo rats per hectare
-    - temperature will just be open and burrow 
-    - change language from open and burrow to thermal refuge and open
-2) set individuals per hectare to be a lot lower
-3) Add in birth model
-4) Research pop sizes and birth rates
+1) make a movement function
 5) Look at foraging models again
+7) Make utility functions
 
-
+Jobs to apply for
+ - https://www.usajobs.gov/job/819535900 
+ - https://careers.hireology.com/themortonarboretum/2043719/description
+ - https://www.governmentjobs.com/careers/washington/jobs/4603232/killer-whale-and-salmon-biometrician-fish-biologist-research-scientist-2-perm
 
 # Model
 - TO DO!!!! Add checks that for pop count > 0

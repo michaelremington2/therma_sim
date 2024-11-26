@@ -25,7 +25,10 @@ class ThermaSim(mesa.Model):
         self.running = True
         self.seed = seed
         self._time_of_day = None
+        self._day = None
         self._month = None
+        self._year = None
+        self.next_agent_id = 0
         if seed is not None:
             np.random.seed(self.seed)
         
@@ -73,12 +76,28 @@ class ThermaSim(mesa.Model):
         self._time_of_day = value
 
     @property
+    def day(self):
+        return self._day
+
+    @day.setter
+    def day(self, value):
+        self._day = value
+
+    @property
     def month(self):
         return self._month
 
     @month.setter
     def month(self, value):
         self._month = value
+
+    @property
+    def year(self):
+        return self._year
+
+    @year.setter
+    def year(self, value):
+        self._year = value
 
     def get_landscape_params(self, config):
         return config['Landscape_Parameters']
@@ -199,13 +218,19 @@ class ThermaSim(mesa.Model):
         for krat in dead_krats:
             self.schedule.remove(krat)
 
+    def too_many_agents_check(self):
+        total_agents = len(self.schedule.agents_by_type[agents.KangarooRat].values()) + len(self.schedule.agents_by_type[agents.Rattlesnake].values())
+        if total_agents > 50000:
+           raise RuntimeError(f"Too many agents in the simulation: {total_agents}")
 
     def step(self):
         '''
         Main model step function used to run one step of the model.
         '''
         self.time_of_day = self.landscape.thermal_profile['hour'].iloc[self.step_id]
+        self.day = self.landscape.thermal_profile['day'].iloc[self.step_id]
         self.month = self.landscape.thermal_profile['month'].iloc[self.step_id]
+        self.year = self.landscape.thermal_profile['year'].iloc[self.step_id]
         self.datacollector.collect(self)
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         # Snakes

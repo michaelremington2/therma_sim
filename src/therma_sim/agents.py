@@ -7,6 +7,7 @@ import networkx as nx
 import pandas as pd
 import metabolism
 import utility_functions as uf
+import birth
 
 
 # Rattlesnake temperature model
@@ -55,6 +56,9 @@ class Rattlesnake(mesa.Agent):
         self.t_opt = self.snake_config['t_opt']
         self.strike_performance_opt = self.snake_config['strike_performance_opt']
         self.body_temp_history = []
+
+        # Birth Module
+        self.birth_module = self.initiate_birth_module(birth_config=self.snake_config['birth_module'])
 
         # Agent logisic checks
         self._point = None
@@ -113,6 +117,17 @@ class Rattlesnake(mesa.Agent):
     @point.setter
     def point(self, value):
         self._point = value
+
+    def initiate_birth_module(self, birth_config):
+        '''
+        Helper function for setting up bith module for organisms
+        '''
+        months_since_last_litter = np.random.choice(range(0,12))
+        return birth.Birth_Module(model=self.model, agent=self,
+                frequency=birth_config["frequency"], mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
+                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["upper_bound_litter_size"],
+                litters_per_year=birth_config["litters_per_year"], months_since_last_litter=months_since_last_litter,
+                partuition_months=birth_config["partuition_months"])
 
     def set_mass(self, body_size_range):
         mass = np.random.uniform(min(body_size_range), max(body_size_range))
@@ -217,6 +232,7 @@ class Rattlesnake(mesa.Agent):
         self.random_death()
         self.is_starved()
         self.activate_snake()
+        self.birth_module.step()
         self.move()
         self.generate_random_point()
         availability = self.model.landscape.get_mh_availability_dict(pos=self.pos)
@@ -245,6 +261,9 @@ class KangarooRat(mesa.Agent):
         self.moore = self.krat_config['moore']
         self.background_death_probability = self.krat_config['background_death_probability']
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
+
+        # Birth Module
+        self.birth_module = self.initiate_birth_module(birth_config=self.krat_config['birth_module'])
     
         # Agent is actively foraging
         self._point = None
@@ -295,6 +314,17 @@ class KangarooRat(mesa.Agent):
             self.active = True
         else:
             self.active = False
+
+    def initiate_birth_module(self, birth_config):
+        '''
+        Helper function for setting up bith module for organisms
+        '''
+        months_since_last_litter = np.random.choice(range(0,3))
+        return birth.Birth_Module(model=self.model, agent=self,
+                frequency=birth_config["frequency"], mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
+                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["upper_bound_litter_size"],
+                litters_per_year=birth_config["litters_per_year"], months_since_last_litter=months_since_last_litter,
+                partuition_months=birth_config["partuition_months"])
     
     def random_death(self):
         '''

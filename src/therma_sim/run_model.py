@@ -1,5 +1,6 @@
 from model import ThermaSim
 import agents
+import time
 
 ### Population sizes are set as individuals per hectFalseare
 
@@ -56,7 +57,7 @@ input_dictionary = {
                               'background_death_probability':0.000001,
                               'brumination_months': [10, 11, 12, 1, 2, 3, 4],
                               'birth_module': {
-                                            "frequency": "biannual",
+                                            "frequency": "biennial",
                                             "mean_litter_size": 4.6,
                                             "std_litter_size": 0.31,
                                             "upper_bound_litter_size": 8,
@@ -88,6 +89,7 @@ input_dictionary = {
 
 def main():
     step_count = 1000
+    start_time = time.time()
     model = ThermaSim(config=input_dictionary,seed=42)
     model.run_model() #step_count=step_count
     model_data = model.datacollector.get_model_vars_dataframe()
@@ -95,6 +97,8 @@ def main():
 
     model_data.to_csv("Output_Data/model_data.csv", index=False)
     rattlesnake_data.to_csv("Output_Data/agent_data.csv", index=False)
+    run_time = time.time() - start_time
+    print(f"Model run completed in {run_time:.2f} seconds.")
 
     # print(model_data)
     # print(agent_data)

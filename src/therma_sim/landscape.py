@@ -40,13 +40,40 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
         '''Val is any value in meters you need to conver to hectares'''
         return float(val / self.hectare_to_meter)
     
+    def get_random_point(self):
+        x = np.random.uniform(0, self.width)
+        y = np.random.uniform(0, self.height)
+        point = (x,y)
+        return point
+    
+    def give_birth(self, species_name, pos, agent_id):
+        '''
+        Helper function - Adds new agents to the landscape
+        '''
+        if species_name=='KangarooRat':
+            kr_params = self.model.get_krat_params(config=self.model.config)
+            krat = agents.KangarooRat(unique_id = agent_id, 
+                                        model = self.model,
+                                        initial_pos = pos,
+                                        krat_config=kr_params)
+            self.place_agent(krat, pos)
+            self.model.schedule.add(krat)
+        elif species_name=='Rattlesnake':
+            rs_params = self.model.get_rattlesnake_params(config=self.model.config)
+            snake = agents.Rattlesnake(unique_id = agent_id, 
+                                        model = self.model,
+                                        initial_pos = pos,
+                                        snake_config = rs_params )
+            self.place_agent(snake, pos)
+            self.model.schedule.add(snake)
+        else:
+            raise ValueError(f'Class for species: {species_name} DNE')
+    
     def initialize_populations(self, initial_agent_dictionary):
         '''
         Helper function in the landscape class used to intialize populations.
         Populations sizes should be a range of individuals per hectare
         '''
-        rs_params = self.model.get_rattlesnake_params(config=self.model.config)
-        kr_params = self.model.get_krat_params(config=self.model.config)
         agent_id = 0
         for x_hect in range(0,self.width, self.hectare_to_meter):
             for y_hect in range(0,self.height, self.hectare_to_meter):
@@ -58,29 +85,12 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
                         x = np.random.uniform(x_hect, x_hect + self.hectare_to_meter)
                         y = np.random.uniform(y_hect, y_hect + self.hectare_to_meter)
                         pos = (x,y)
+                        self.give_birth(species_name=species, pos=pos, agent_id=agent_id)
+                        agent_id +=1
+                        self.model.next_agent_id = agent_id+1
                         #print(pos,agent_id)
-                        if species=='KangarooRat':
-                            # Create agent
-                            krat = agents.KangarooRat(unique_id = agent_id, 
-                                                        model = self.model,
-                                                        initial_pos = pos,
-                                                        krat_config=kr_params)
-                            # place agent
-                            self.place_agent(krat, pos)
-                            self.model.schedule.add(krat)
-                            agent_id += 1
-                        elif species=='Rattlesnake':
-                            # Create agent
-                            snake = agents.Rattlesnake(unique_id = agent_id, 
-                                                        model = self.model,
-                                                        initial_pos = pos,
-                                                        snake_config = rs_params)
-                            # place agent
-                            self.place_agent(snake, pos)
-                            self.model.schedule.add(snake)
-                            agent_id += 1
-                        else:
-                            raise ValueError(f'Class for species: {species} DNE')
+                        
+
                         
     def get_mh_availability_dict(self, pos):
         '''
