@@ -61,7 +61,7 @@ class Rattlesnake(mesa.Agent):
         self.birth_module = self.initiate_birth_module(birth_config=self.snake_config['birth_module'])
 
         # Agent logisic checks
-        self._point = None
+        self._pos = None
         self._active = False
         self._alive = True
 
@@ -111,12 +111,12 @@ class Rattlesnake(mesa.Agent):
             self.active=False
 
     @property
-    def point(self):
-        return self._point
+    def pos(self):
+        return self._pos
 
-    @point.setter
-    def point(self, value):
-        self._point = value
+    @pos.setter
+    def pos(self, value):
+        self._pos = value
 
     def initiate_birth_module(self, birth_config):
         '''
@@ -133,11 +133,11 @@ class Rattlesnake(mesa.Agent):
         mass = np.random.uniform(min(body_size_range), max(body_size_range))
         return mass
 
-    def generate_random_point(self):
+    def generate_random_pos(self):
         hectare_size = 100
         x = np.random.uniform(0, hectare_size)
         y = np.random.uniform(0, hectare_size)
-        self.point = (x, y)
+        self.pos = (x, y)
     
     def activate_snake(self):
         if self.current_microhabitat != 'Burrow':
@@ -234,7 +234,7 @@ class Rattlesnake(mesa.Agent):
         self.activate_snake()
         self.birth_module.step()
         self.move()
-        self.generate_random_point()
+        self.generate_random_pos()
         availability = self.model.landscape.get_mh_availability_dict(pos=self.pos)
         overall_utility = self.utility_module.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability, behavior_preferences=self.behavior_weights)
         self.current_behavior, self.current_microhabitat = self.utility_module.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
@@ -254,7 +254,7 @@ class KangarooRat(mesa.Agent):
     '''
     def __init__(self, unique_id, model, initial_pos, krat_config):
         super().__init__(unique_id, model)
-        self.initial_pos = initial_pos
+        self.pos = initial_pos
         self.krat_config = krat_config
         self.active_hours = self.krat_config['active_hours']
         self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
@@ -266,7 +266,7 @@ class KangarooRat(mesa.Agent):
         self.birth_module = self.initiate_birth_module(birth_config=self.krat_config['birth_module'])
     
         # Agent is actively foraging
-        self._point = None
+        self._pos = None
         self._active = False
         self._alive = True
 
@@ -289,21 +289,21 @@ class KangarooRat(mesa.Agent):
             self.active=False
 
     @property
-    def point(self):
-        return self._point
+    def pos(self):
+        return self._pos
 
-    @point.setter
-    def point(self, value):
+    @pos.setter
+    def pos(self, value):
         if isinstance(value, tuple) and len(value) == 2:
-            self._point = value
+            self._pos = value
         else:
-            raise ValueError("Point must be a tuple with two elements (x, y)")
+            raise ValueError("pos must be a tuple with two elements (x, y)")
 
-    def generate_random_point(self):
+    def generate_random_pos(self):
         hectare_size = 100
         x = np.random.uniform(0, hectare_size)
         y = np.random.uniform(0, hectare_size)
-        self.point = (x, y)
+        self.pos = (x, y)
 
     def set_mass(self, body_size_range):
         mass = np.random.uniform(min(body_size_range), max(body_size_range))
@@ -333,6 +333,10 @@ class KangarooRat(mesa.Agent):
         random_val = np.random.random()
         if random_val <= self.background_death_probability:
             self.alive = False
+
+    def von_mises_move(self, current_pos):
+        direction = np.random.vonmises()
+        
     
     def move(self):
         pass
@@ -341,14 +345,15 @@ class KangarooRat(mesa.Agent):
         hour = self.model.landscape.thermal_profile['hour'].iloc[self.model.step_id]
         self.random_death()
         self.activate_krat(hour=hour)
+        self.birth_module.step()
         if self.active:
-            self.generate_random_point()
+            self.generate_random_pos()
 
 
 
-# class SeedPatch(mesa.Agent):
-#     def __init__(self, unique_id, model):
-#         super().__init__(unique_id, model)
+class SeedPatch(mesa.Agent):
+    def __init__(self, unique_id, model):
+        super().__init__(unique_id, model)
 
-#     def step(self):
-#         pass
+    def step(self):
+        pass

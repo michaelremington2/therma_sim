@@ -89,9 +89,7 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
                         agent_id +=1
                         self.model.next_agent_id = agent_id+1
                         #print(pos,agent_id)
-                        
-
-                        
+                                    
     def get_mh_availability_dict(self, pos):
         '''
         Helper function to return the microhabitat availability dictionary by position. returns a dictionary like this

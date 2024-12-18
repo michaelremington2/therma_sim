@@ -1,9 +1,18 @@
-
-
 ### Main To Do 
-1) make a movement function
-5) Look at foraging models again
-7) Make utility functions
+- make a movement function
+    - Read these papers
+        - https://movementecologyjournal.biomedcentral.com/articles/10.1186/s40462-024-00507-4
+        - https://www.fs.usda.gov/rm/pubs_journals/2020/rmrs_2020_diniz_m001.pdf
+        - https://www.nature.com/articles/s41598-021-93387-2
+    - Need to set up von mises/ b line distribution for kangaroo rats
+- Make utility functions
+- seed patches
+- cycle csv for multiple years?
+- Apply to jobs
+- Finish Biopython workshop
+- Make Dashboard of current model
+    - https://plotly.com/examples/
+
 
 Jobs to apply for
  - https://www.usajobs.gov/job/819535900 
@@ -13,7 +22,6 @@ Jobs to apply for
 # Model
 - TO DO!!!! Add checks that for pop count > 0
 - add birth rates
-- admixture rate (stepping stone model)
 - check yearly data to make sure its full year
     - Yearly data is not a full year. Check with ryan if there is new data.
 - work time of day and date into data

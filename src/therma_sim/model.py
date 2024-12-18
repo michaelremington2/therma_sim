@@ -45,6 +45,10 @@ class ThermaSim(mesa.Model):
         self.datacollector = mesa.DataCollector(
             model_reporters={
                 'Step_ID': lambda m: m.step_id,
+                'Hour': lambda m: m.hour, 
+                'Day': lambda m: m.day,
+                'Month': lambda m: m.month,
+                'Year': lambda m: m.year,
                 "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
                 "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),
             },
