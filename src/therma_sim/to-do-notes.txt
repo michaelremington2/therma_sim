@@ -12,6 +12,8 @@
 - Finish Biopython workshop
 - Make Dashboard of current model
     - https://plotly.com/examples/
+- If thermal_db is None:
+    Simulate ts for 
 
 
 Jobs to apply for

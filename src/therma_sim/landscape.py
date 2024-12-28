@@ -7,8 +7,12 @@ import math
 import pandas as pd
 import agents
 
+###
+# Set up landscape to allow for tests and ability to have small landscapes.
+
+
 class Continous_Landscape(mesa.space.ContinuousSpace):
-    def __init__(self, model, thermal_profile_csv_fp: str, width: int, height: int, torus: bool):
+    def __init__(self, model, thermal_profile_csv_fp: str, width: int, height: int, torus: bool, _test=False):
         super().__init__(width, height, torus)
         self.model = model
         ## Change spaticial dementions, prolly meters
