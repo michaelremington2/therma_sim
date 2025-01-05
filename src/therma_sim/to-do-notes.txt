@@ -1,19 +1,19 @@
 ### Main To Do 
 - make a movement function
+    - seed patches
+    - Need to set up von mises/ b line distribution for kangaroo rat
     - Read these papers
         - https://movementecologyjournal.biomedcentral.com/articles/10.1186/s40462-024-00507-4
         - https://www.fs.usda.gov/rm/pubs_journals/2020/rmrs_2020_diniz_m001.pdf
         - https://www.nature.com/articles/s41598-021-93387-2
-    - Need to set up von mises/ b line distribution for kangaroo rats
+- cycle csv for multiple years
+    - If thermal_db is None: Simulate ts for 
 - Make utility functions
-- seed patches
-- cycle csv for multiple years?
-- Apply to jobs
-- Finish Biopython workshop
+- Make Birth function
+
+
 - Make Dashboard of current model
     - https://plotly.com/examples/
-- If thermal_db is None:
-    Simulate ts for 
 
 
 Jobs to apply for

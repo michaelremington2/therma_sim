@@ -6,11 +6,11 @@ import math
 import networkx as nx
 import pandas as pd
 import landscape
-import agents 
+from . import agents 
 import warnings
 import logging
 import json
-from interaction import Interaction_Dynamics
+from . import interaction
 
 warnings.filterwarnings("ignore")
 
@@ -18,7 +18,7 @@ class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
-    def __init__(self, config, seed=None):
+    def __init__(self, config, seed=None, _test=False):
         self.config = config
         self.initial_agents_dictionary = self.get_initial_population_params(config=self.config)
         self.step_id = 0
@@ -146,7 +146,7 @@ class ThermaSim(mesa.Model):
             predator_name, prey_name = pred_prey.split('_')
             
             # Return or store the Interaction_Dynamics object
-            return Interaction_Dynamics(
+            return interaction.Interaction_Dynamics(
                 model=model,                  
                 predator_name=predator_name, 
                 prey_name=prey_name, 
@@ -247,7 +247,10 @@ class ThermaSim(mesa.Model):
         for krat in krat_shuffle:
             krat.step()
         krat_shuffle = self.randomize_krats()
-        self.kr_rs_interaction_module.interaction_module()
+        ## Interaction
+        active_snakes = self.model.randomize_active_snakes()
+        for snake in active_snakes:
+            self.kr_rs_interaction_module.interaction_module(snake=snake)
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
         self.schedule.step()

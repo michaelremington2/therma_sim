@@ -17,9 +17,14 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+license = { file = "LICENSE.txt" }
 
 [project.urls]
 "Homepage" = "https://github.com/michaelremington2/therma_sim"
 
 [tool.pytest.ini_options]
 pythonpaths = ["src"]
+
+
+
+

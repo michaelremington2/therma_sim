@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import math
 import networkx as nx
 import pandas as pd
-import metabolism
-import utility_functions as uf
-import birth
+from . import metabolism
+from . import utility_functions as uf
+from . import birth
 
 
 # Rattlesnake temperature model
