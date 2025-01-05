@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 import math
 import networkx as nx
 import pandas as pd
-import landscape
-from . import agents 
 import warnings
 import logging
 import json
+from . import landscape
+from . import agents 
 from . import interaction
 
 warnings.filterwarnings("ignore")

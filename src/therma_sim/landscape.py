@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import math
 #import networkx as nx
 import pandas as pd
-import agents
+from . import agents
 
 ###
 # Set up landscape to allow for tests and ability to have small landscapes.
