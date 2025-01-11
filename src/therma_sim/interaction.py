@@ -42,7 +42,7 @@ class Interaction_Dynamics(object):
         else:
             return False
     
-    def interaction_module(self, snake):
+    def interaction_module(self, snake, _test):
         '''
         Main interaction model between agents. The model simulates point locations within a hectare then checks if a snake and a krat agent 
         are within striking distance of eachother if they are active.
@@ -51,8 +51,15 @@ class Interaction_Dynamics(object):
         neighbors = self.model.landscape.get_neighbors(center_pos, radius=self.interaction_distance, include_center=False)
         potential_prey = [agent for agent in neighbors if isinstance(agent, agents.KangarooRat) and agent.active]
         if len(potential_prey)>0:
+            interaction = True
             krat = np.random.choice(potential_prey)
             self.strike_module(krat=krat, snake=snake)
+        else:
+            interaction = False
+        if _test:
+            return interaction
+        else:
+            return
 
     def strike_module(self, krat, snake):
         '''
@@ -68,7 +75,7 @@ class Interaction_Dynamics(object):
                                                 performance_opt=snake.strike_performance_opt)
         random_value = np.random.random()
         if random_value <= strike_probability:
-            #print('Successful Strike!')
+            print('Successful Strike!')
             # Strike occurs
             prey_mass = krat.mass
             snake.metabolism.cals_gained(prey_mass=prey_mass,

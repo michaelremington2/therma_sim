@@ -163,3 +163,4 @@ cython_debug/
 src/therma_sim/Data/
 src/therma_sim/Output_Data/
 src/therma_sim/scratch_scripts/
+src/therma_sim/Notes/

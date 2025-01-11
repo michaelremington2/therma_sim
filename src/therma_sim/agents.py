@@ -18,19 +18,45 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, initial_pos, snake_config):
+    def __init__(self, unique_id, model, initial_pos, snake_config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
         self.snake_config = snake_config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
-        self.metabolism = metabolism.EctothermMetabolism(initial_metabolic_state=self.snake_config['initial_calories'],
-                                                         X1_mass=self.snake_config['X1_mass'],
-                                                         X2_temp=self.snake_config['X2_temp'],
-                                                         X3_const=self.snake_config['X3_const'])
-        self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
-        self.moore = self.snake_config['moore']
-        self.burmination_months = self.snake_config['brumination_months']
-        self.background_death_probability = self.snake_config['background_death_probability']
+        if snake_config is not None:
+            self.metabolism = metabolism.EctothermMetabolism(initial_metabolic_state=self.snake_config['initial_calories'],
+                                                            X1_mass=self.snake_config['X1_mass'],
+                                                            X2_temp=self.snake_config['X2_temp'],
+                                                            X3_const=self.snake_config['X3_const'])
+            self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
+            self.moore = self.snake_config['moore']
+            self.burmination_months = self.snake_config['brumination_months']
+            self.background_death_probability = self.snake_config['background_death_probability']
+            # Temperature
+            self.delta_t = self.snake_config['delta_t']
+            self._body_temperature = self.snake_config['Initial_Body_Temperature']
+            self.k = self.snake_config['k']
+            self.t_pref_min = self.snake_config['t_pref_min']
+            self.t_pref_max = self.snake_config['t_pref_max']
+            self.t_opt = self.snake_config['t_opt']
+            self.strike_performance_opt = self.snake_config['strike_performance_opt']
+            # Birth Module
+            self.birth_module = self.initiate_birth_module(birth_config=self.snake_config['birth_module'])
+        else:
+            # Initialize attributes to None or defaults
+            self.metabolism = None
+            self.mass = None
+            self.moore = None
+            self.brumination_months = None
+            self.background_death_probability = None
+            self.delta_t = None
+            self._body_temperature = None
+            self.k = None
+            self.t_pref_min = None
+            self.t_pref_max = None
+            self.t_opt = None
+            self.strike_performance_opt = None
+            self.birth_module = None
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
@@ -46,19 +72,7 @@ class Rattlesnake(mesa.Agent):
         # Microhabitat
         self._current_microhabitat = ''
         self.microhabitat_history = []
-
-        # Temperature
-        self.delta_t = self.snake_config['delta_t']
-        self._body_temperature = self.snake_config['Initial_Body_Temperature']
-        self.k = self.snake_config['k']
-        self.t_pref_min = self.snake_config['t_pref_min']
-        self.t_pref_max = self.snake_config['t_pref_max']
-        self.t_opt = self.snake_config['t_opt']
-        self.strike_performance_opt = self.snake_config['strike_performance_opt']
         self.body_temp_history = []
-
-        # Birth Module
-        self.birth_module = self.initiate_birth_module(birth_config=self.snake_config['birth_module'])
 
         # Agent logisic checks
         self._pos = None
@@ -155,7 +169,7 @@ class Rattlesnake(mesa.Agent):
         if current_microhabitat=='Burrow':
             t_env = self.model.landscape.burrow_temperature
         elif current_microhabitat=='Open':
-            t_env = self.model.landscape.burrow_temperature
+            t_env = self.model.landscape.open_temperature
         # elif current_microhabitat=='Shrub':
         #     t_env = self.model.landscape.get_property_attribute(property_name='Shrub_Temp', pos=self.pos)
         else:
@@ -252,18 +266,26 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, initial_pos, krat_config):
+    def __init__(self, unique_id, model, initial_pos, krat_config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
         self.krat_config = krat_config
-        self.active_hours = self.krat_config['active_hours']
-        self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
-        self.moore = self.krat_config['moore']
-        self.background_death_probability = self.krat_config['background_death_probability']
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
+        if self.krat_config is not None:
+            self.active_hours = self.krat_config['active_hours']
+            self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
+            self.moore = self.krat_config['moore']
+            self.background_death_probability = self.krat_config['background_death_probability']
+            self.birth_module = self.initiate_birth_module(birth_config=self.krat_config['birth_module'])
+        else:
+            self.active_hours = None
+            self.mass = None
+            self.moore = None
+            self.background_death_probability = None
+            self.birth_module = None
 
         # Birth Module
-        self.birth_module = self.initiate_birth_module(birth_config=self.krat_config['birth_module'])
+        
     
         # Agent is actively foraging
         self._pos = None
