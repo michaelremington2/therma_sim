@@ -2,6 +2,7 @@ from mesa import Model, Agent
 from mesa.time import RandomActivation
 from mesa.space import ContinuousSpace
 import numpy as np
+import pandas as pd
 
 
 
@@ -9,6 +10,10 @@ class ContinuousLandscapeModel(Model):
     """A model with agents on a continuous landscape."""
     def __init__(self, width, height):
         self.landscape = ContinuousSpace(x_max=width, y_max=height, torus=False)
+        self.landscape.thermal_profile = pd.read_csv("Data/thermal_db.csv", header=0)
+        self.landscape.microhabitats = ['Burrow', 'Open']
+        self.step_id = 1
+        self.month=9
         self.schedule = RandomActivation(self)
         
 

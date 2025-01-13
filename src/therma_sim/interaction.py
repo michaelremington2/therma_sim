@@ -3,8 +3,8 @@ from . import TPC
 import math
 import numpy as np
 from . import agents
-import sys
-print(sys.path)
+
+
 
 class Interaction_Dynamics(object):
     '''
@@ -19,6 +19,7 @@ class Interaction_Dynamics(object):
                  interaction_distance: float, 
                  calories_per_gram: float, 
                  digestion_efficiency: float):
+        super().__init__()
         self.model = model
         self.predator_name = predator_name
         self.prey_name = prey_name
@@ -42,7 +43,7 @@ class Interaction_Dynamics(object):
         else:
             return False
     
-    def interaction_module(self, snake, _test):
+    def interaction_module(self, snake, _test=False):
         '''
         Main interaction model between agents. The model simulates point locations within a hectare then checks if a snake and a krat agent 
         are within striking distance of eachother if they are active.

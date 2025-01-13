@@ -30,7 +30,7 @@ class Rattlesnake(mesa.Agent):
                                                             X3_const=self.snake_config['X3_const'])
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
             self.moore = self.snake_config['moore']
-            self.burmination_months = self.snake_config['brumination_months']
+            self.brumation_months = self.snake_config['brumination_months']
             self.background_death_probability = self.snake_config['background_death_probability']
             # Temperature
             self.delta_t = self.snake_config['delta_t']
@@ -46,9 +46,9 @@ class Rattlesnake(mesa.Agent):
             # Initialize attributes to None or defaults
             self.metabolism = None
             self.mass = None
-            self.moore = None
-            self.brumination_months = None
-            self.background_death_probability = None
+            self.moore = False
+            self.brumation_months = []
+            self.background_death_probability = 0.0
             self.delta_t = None
             self._body_temperature = None
             self.k = None
@@ -75,7 +75,6 @@ class Rattlesnake(mesa.Agent):
         self.body_temp_history = []
 
         # Agent logisic checks
-        self._pos = None
         self._active = False
         self._alive = True
 
@@ -109,7 +108,7 @@ class Rattlesnake(mesa.Agent):
 
     @active.setter
     def active(self, value):
-        if self.model.month in self.burmination_months:
+        if self.model.month in self.brumation_months:
             self._active = False
         else:
             self._active = value
@@ -248,7 +247,7 @@ class Rattlesnake(mesa.Agent):
         self.activate_snake()
         self.birth_module.step()
         self.move()
-        self.generate_random_pos()
+        #self.generate_random_pos()
         availability = self.model.landscape.get_mh_availability_dict(pos=self.pos)
         overall_utility = self.utility_module.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability, behavior_preferences=self.behavior_weights)
         self.current_behavior, self.current_microhabitat = self.utility_module.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
@@ -278,17 +277,12 @@ class KangarooRat(mesa.Agent):
             self.background_death_probability = self.krat_config['background_death_probability']
             self.birth_module = self.initiate_birth_module(birth_config=self.krat_config['birth_module'])
         else:
-            self.active_hours = None
-            self.mass = None
-            self.moore = None
-            self.background_death_probability = None
+            self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+            self.mass = 10
+            self.moore = True
+            self.background_death_probability = 0.0
             self.birth_module = None
-
-        # Birth Module
-        
-    
         # Agent is actively foraging
-        self._pos = None
         self._active = False
         self._alive = True
 
@@ -316,10 +310,7 @@ class KangarooRat(mesa.Agent):
 
     @pos.setter
     def pos(self, value):
-        if isinstance(value, tuple) and len(value) == 2:
-            self._pos = value
-        else:
-            raise ValueError("pos must be a tuple with two elements (x, y)")
+        self._pos = value
 
     def generate_random_pos(self):
         hectare_size = 100
