@@ -9,6 +9,7 @@ import pandas as pd
 class ContinuousLandscapeModel(Model):
     """A model with agents on a continuous landscape."""
     def __init__(self, width, height):
+        super().__init__()
         self.landscape = ContinuousSpace(x_max=width, y_max=height, torus=False)
         self.landscape.thermal_profile = pd.read_csv("Data/thermal_db.csv", header=0)
         self.landscape.microhabitats = ['Burrow', 'Open']
