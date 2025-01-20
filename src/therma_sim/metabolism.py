@@ -12,6 +12,7 @@ class EctothermMetabolism(object):
         self._metabolic_state = None
         self.metabolic_state = initial_metabolic_state
 
+
     @property
     def metabolic_state(self):
         """
@@ -36,6 +37,13 @@ class EctothermMetabolism(object):
             self._metabolic_state = float(value)
         else:
             raise ValueError("`metabolic_state` must be a range, list, tuple, or single numeric value.")
+
+    def initialize_max_metabolic_state(self, value):
+        """
+        Helper function to initialize the attribute max_metabolic_state. 
+        This value is calculated in the interaction class.
+        """
+        self.max_metabolic_state = value
 
     def smr_eq(self, mass, temperature):
         '''This returns VO2 which is a proxy for SMR. 

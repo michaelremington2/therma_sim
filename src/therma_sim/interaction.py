@@ -5,6 +5,8 @@ import numpy as np
 from . import agents
 
 
+## Recode this to be a general predator and prey agent class
+
 
 class Interaction_Dynamics(object):
     '''
@@ -18,7 +20,8 @@ class Interaction_Dynamics(object):
                  prey_name: str, 
                  interaction_distance: float, 
                  calories_per_gram: float, 
-                 digestion_efficiency: float):
+                 digestion_efficiency: float,
+                 max_meals: int):
         super().__init__()
         self.model = model
         self.predator_name = predator_name
@@ -26,6 +29,10 @@ class Interaction_Dynamics(object):
         self.interaction_distance = interaction_distance
         self.calories_per_gram = calories_per_gram
         self.digestion_efficiency = digestion_efficiency
+        self.max_meals = max_meals
+        self.prey_mass = 70  # grams
+        self.prey_meal = self.calories_per_gram * self.prey_mass * self.digestion_efficiency
+        self.predator_max_metabolic_state = self.prey_meal*max_meals
 
                     
     def check_for_interaction_retired(self, snake_point, krat_point):

@@ -40,6 +40,7 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_max = self.snake_config['t_pref_max']
             self.t_opt = self.snake_config['t_opt']
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
+            self.max_thermal_accuracy = 5 #Replace this with an input value later
             # Birth Module
             self.birth_module = self.initiate_birth_module(birth_config=self.snake_config['birth_module'])
         else:
