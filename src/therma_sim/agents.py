@@ -6,7 +6,7 @@ import math
 import networkx as nx
 import pandas as pd
 from . import metabolism
-from . import utility_functions as uf
+from . import behavior 
 from . import birth
 
 
@@ -61,9 +61,7 @@ class Rattlesnake(mesa.Agent):
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
-        self.utility_module = uf.Utiility(snake=self)
-        self.behavior_weights = self.random_make_behavioral_preference_weights(_test=True)
-        self.utility_scores = self.utility_module.generate_static_utility_vector_b1mh2()
+        self.behavior_module = behavior.EctothermBehavior(snake=self)
         self._current_behavior = ''
         self.behavior_history = []
         self.activity_coefficients = {'Rest':1,
@@ -181,27 +179,6 @@ class Rattlesnake(mesa.Agent):
         self.body_temperature = self.cooling_eq_k(k=self.k, t_body=self.body_temperature, t_env=t_env, delta_t=delta_t)
         return
 
-    def random_make_behavioral_preference_weights(self, _test=False):
-        '''
-        Creates the vector of behavior preferences at random (uniform distribution).
-        Args:
-            - None
-        Funcions method is used in:
-            - Init
-        '''
-        if _test:
-            rest_weight = 0.5
-            forage_weight = 0.25
-            thermoregulate_weight = 0.25
-        else:
-            rest_weight = np.random.uniform(0.4, 0.6)
-            forage_weight = np.random.uniform(0.2, 0.4)
-            thermoregulate_weight = 1 - rest_weight - forage_weight
-        assert math.isclose(sum([rest_weight, forage_weight, thermoregulate_weight]), 1, rel_tol=1e-9)
-        weights = {'Rest': rest_weight,
-                   'Forage': forage_weight,
-                   'Thermoregulate': thermoregulate_weight}
-        return weights
     
     def log_choice(self, microhabitat, behavior, body_temp):
         '''
@@ -251,7 +228,8 @@ class Rattlesnake(mesa.Agent):
         #self.generate_random_pos()
         availability = self.model.landscape.get_mh_availability_dict(pos=self.pos)
         overall_utility = self.utility_module.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability, behavior_preferences=self.behavior_weights)
-        self.current_behavior, self.current_microhabitat = self.utility_module.simulate_decision_b1mh2(microhabitats = self.model.landscape.microhabitats, utility_scores=self.utility_scores, overall_utility=overall_utility)
+        self.current_behavior = self.behavior_module.choose_behavior()
+        self.current_microhabitat = None # Pick up hear tomorrow
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
         self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coeffcient=self.activity_coefficients[self.current_behavior])
         self.update_body_temp(t_env, delta_t=self.delta_t)

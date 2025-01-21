@@ -3,7 +3,7 @@ import numpy as np
 from scipy.special import softmax
 
 class EctothermBehavior(object):
-    def __init__(self, snake, _statitc_utility_test=False):
+    def __init__(self, snake):
         self.snake = snake
 
     def thermal_accuracy_calculator(self):
