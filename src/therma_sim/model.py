@@ -8,9 +8,10 @@ import pandas as pd
 import warnings
 import logging
 import json
-from . import landscape
-from . import agents 
-from . import interaction
+import landscape
+import agents 
+import interaction
+import uuid
 
 warnings.filterwarnings("ignore")
 
@@ -24,7 +25,7 @@ class ThermaSim(mesa.Model):
         self.step_id = 0
         self.running = True
         self.seed = seed
-        self._time_of_day = None
+        self._hour = None
         self._day = None
         self._month = None
         self._year = None
@@ -38,9 +39,11 @@ class ThermaSim(mesa.Model):
 
         ## Make Initial Landscape
         self.landscape = self.make_landscape(model=self)
-        self.kr_rs_interaction_module = self.make_interaction_module(model=self)
+        self.steps_per_year = self.landscape.count_steps_in_one_year()
+        self.interaction_map = self.make_interaction_module(model=self)
         ## Intialize agents
-        self.landscape.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
+        self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
+
         # Data collector
         self.datacollector = mesa.DataCollector(
             model_reporters={
@@ -72,12 +75,12 @@ class ThermaSim(mesa.Model):
 
 
     @property
-    def time_of_day(self):
-        return self._time_of_day
+    def hour(self):
+        return self._hour
 
-    @time_of_day.setter
-    def time_of_day(self, value):
-        self._time_of_day = value
+    @hour.setter
+    def hour(self, value):
+        self._hour = value
 
     @property
     def day(self):
@@ -103,6 +106,21 @@ class ThermaSim(mesa.Model):
     def year(self, value):
         self._year = value
 
+    @property
+    def rattlesnake_pop_size(self):
+        """Returns the count of Rattlesnake agents in the model."""
+        return self.schedule.get_type_count(agents.Rattlesnake)
+
+    @property
+    def krats_pop_size(self):
+        """Returns the count of KangarooRat agents in the model."""
+        return self.schedule.get_type_count(agents.KangarooRat)
+    
+    @property
+    def active_krats_count(self):
+        active_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if krat.active]
+        return len(active_krats)
+
     def get_landscape_params(self, config):
         return config['Landscape_Parameters']
 
@@ -117,48 +135,103 @@ class ThermaSim(mesa.Model):
     
     def get_initial_population_params(self, config):
         return config['Initial_Population_Sizes']
+    
+    def get_interaction_map(self, config):
+        return config['Interaction_Map']
 
     def make_landscape(self, model):
         '''
         Helper function for intializing the landscape class
         '''
         ls_params = self.get_landscape_params(config = self.config)
-        return landscape.Continous_Landscape(model = model, 
-                                            thermal_profile_csv_fp = ls_params['Thermal_Database_fp'],
-                                            width=ls_params['Width'],
-                                            height=ls_params['Height'],
-                                            torus=ls_params['torus'])
+        return landscape.Spatially_Implicit_Landscape(model = model,
+                                                      width = ls_params['Width'],
+                                                      height = ls_params['Height'],
+                                                      thermal_profile_csv_fp = ls_params['Thermal_Database_fp'])
 
     def make_interaction_module(self, model):
         '''
-        Helper function for making an interaction model between a predator and prey     
+        Retired: Helper function for making an interaction model between a predator and prey     
         '''
-        interaction_params = self.get_interaction_params(config=self.config)
+        interaction_map = self.get_interaction_map(config=self.config)
+        return interaction.Interaction_Map(model = self, interaction_map=interaction_map)
+
+    def logistic_population_density_function(self, global_population, total_area, carrying_capacity, growth_rate, threshold_density):
+        """
+        Computes local density based on global population using logistic scaling.
+
+        Parameters:
+        - global_population (int or array): Total population size.
+        - total_area (int): Total hectares.
+        - carrying_capacity (float): Maximum possible density per hectare.
+        - growth_rate (float): Sensitivity of density changes.
+        - threshold_density (float): Density at which changes have the largest effect.
+
+        Returns:
+        - local_density (float or array): Adjusted local density based on feedback.
+        """
+        avg_density = global_population / total_area
+        adjusted_density = carrying_capacity / (1 + np.exp(-growth_rate * (avg_density - threshold_density)))
+        return adjusted_density
+    
+    def calc_local_population_density(self, population_size, middle_range, max_density):
+        # Define parameters
+        total_area = self.landscape.landscape_size
+        carrying_capacity = max_density  # max density per hectare
+        growth_rate = 1  # scaling sensitivity
+        threshold_density = middle_range  # middle of the range
+        global_population = population_size 
+        # Compute local densities
+        new_local_density = self.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
+        return new_local_density
         
-        # Loop through each interaction type and its parameters
-        for pred_prey, params in interaction_params.items():
-            # Unpack the interaction parameters
-            interaction_distance = params['Interaction_Distance']
-            prey_cals_per_gram = params['Prey_Cals_per_gram']
-            digestion_efficiency = params['Digestion_Efficency']
-            
-            # Assume that the predator and prey names are derived from the interaction type
-            predator_name, prey_name = pred_prey.split('_')
-            
-            # Return or store the Interaction_Dynamics object
-            return interaction.Interaction_Dynamics(
-                model=model,                  
-                predator_name=predator_name, 
-                prey_name=prey_name, 
-                interaction_distance=interaction_distance, 
-                calories_per_gram=prey_cals_per_gram, 
-                digestion_efficiency=digestion_efficiency
-        )
-                
-    def useful_check_landscape_functions(self, property_layer_name):
-        self.landscape.visualize_property_layer('Open_Microhabitat')
-        self.landscape.print_property_layer('Shrub_Microhabitat')
-        self.landscape.check_landscape()
+    ## Intialize populations and births
+    def give_birth(self, species_name, agent_id, pos=None, parent=None):
+        """
+        Helper function - Adds new agents to the landscape
+        """
+        species_map = {
+            "KangarooRat": (agents.KangarooRat, self.get_krat_params),
+            "Rattlesnake": (agents.Rattlesnake, self.get_rattlesnake_params)
+        }
+
+        if species_name not in species_map:
+            raise ValueError(f"Class for species: {species_name} does not exist")
+
+        agent_class, param_func = species_map[species_name]
+        agent_params = param_func(config=self.config)
+
+        agent = agent_class(unique_id=agent_id, model=self, config=agent_params)
+        if pos is not None:
+            self.place_agent(agent, pos)
+        self.schedule.add(agent)
+
+    def initialize_populations(self, initial_agent_dictionary, spatially_explicit=False):
+        '''
+        Helper function in the landscape class used to intialize populations.
+        Populations sizes should be a range of individuals per hectare
+        '''
+        agent_id = 0
+        for hect in range(self.landscape.landscape_size):
+            for species, initial_population_size_range in initial_agent_dictionary.items():
+                start, stop = initial_population_size_range.start, initial_population_size_range.stop
+                initial_pop_size = round(np.random.uniform(start, stop))
+                # Need to scale population size by hectare
+                for i in range(initial_pop_size):
+                    if spatially_explicit:
+                        # Code for future models. Not working right now.
+                        x_hect = 0 
+                        y_hect = 0
+                        x = np.random.uniform(x_hect, x_hect + self.hectare_to_meter)
+                        y = np.random.uniform(y_hect, y_hect + self.hectare_to_meter)
+                        pos = (x,y)
+                        self.give_birth(species_name=species, pos=pos, agent_id=agent_id)
+                    else:
+                        self.give_birth(species_name=species, agent_id=agent_id)
+                    agent_id +=1
+                    self.next_agent_id = agent_id+1
+                #print(pos,agent_id)
+                                    
 
     def randomize_snakes(self):
         '''
@@ -210,6 +283,12 @@ class ThermaSim(mesa.Model):
     
         return active_krats
     
+    def get_active_krat(self):
+        active_krats = self.randomize_active_krats()
+        if not active_krats:  
+            return None  
+        return np.random.choice(active_krats)
+    
     def remove_dead_agents(self):
         '''
         Helper function: Create a list of agents to remove because they are dead
@@ -231,7 +310,7 @@ class ThermaSim(mesa.Model):
         '''
         Main model step function used to run one step of the model.
         '''
-        self.time_of_day = self.landscape.thermal_profile['hour'].iloc[self.step_id]
+        self.hour = self.landscape.thermal_profile['hour'].iloc[self.step_id]
         self.day = self.landscape.thermal_profile['day'].iloc[self.step_id]
         self.month = self.landscape.thermal_profile['month'].iloc[self.step_id]
         self.year = self.landscape.thermal_profile['year'].iloc[self.step_id]
@@ -247,10 +326,6 @@ class ThermaSim(mesa.Model):
         for krat in krat_shuffle:
             krat.step()
         krat_shuffle = self.randomize_krats()
-        ## Interaction
-        active_snakes = self.model.randomize_active_snakes()
-        for snake in active_snakes:
-            self.kr_rs_interaction_module.interaction_module(snake=snake)
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
         self.schedule.step()

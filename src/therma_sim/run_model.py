@@ -4,12 +4,15 @@ import time
 
 ### Population sizes are set as individuals per hectFalseare
 
+def halfway_in_range(r):
+    return (r.start + r.stop - 1) / 2
+
 ## Landscape Parameters
 thermal_data_profile_fp = 'Data/Texas-Marathon_data.csv'
 torus = False
 moore = False
-width=320000 # 32 hectares to 320000 meters
-height=320000 # 32 hectares to 320000 meters
+width=32# 32 hectares to 320000 meters
+height=32 # 32 hectares to 320000 meters
 
 # Rattlesnake Parameters
 snake_body_sizes = range(370,790+1)
@@ -20,6 +23,7 @@ t_pref_min=18
 t_pref_max=32
 t_opt = 28 
 strike_performance_opt = 0.21
+max_meals = 6
 
 # KangarooRat Parameters
 krat_body_sizes = range(60, 70+1) #https://www.depts.ttu.edu/nsrl/mammals-of-texas-online-edition/Accounts_Rodentia/Dipodomys_ordii.php
@@ -31,7 +35,17 @@ digestion_efficency = 0.8 # Assumed rate of calorie assimilation. Metric is from
 performance_opt = 0.21 #From Grace, Rulon paper
 
 initial_population_sizes = {'KangarooRat': range(3,14),
-                            'Rattlesnake': range(0,1)}# Individuals per hectare
+                            'Rattlesnake': range(0,1)} # Individuals per hectare
+
+interaction_map = {
+    ("Rattlesnake", "KangarooRat"): {
+        "interaction_distance": interaction_distance,
+        "calories_per_gram": krat_cals_per_gram,
+        "digestion_efficiency": digestion_efficency,
+        "expected_prey_body_size": halfway_in_range(r=krat_body_sizes),
+        "handling_time_range": {"min": 15/60, "max": 120/60}, # scaled to a hour
+        "attack_rate_range": {"min": 1/10, "max": 5/10} # 1 to 5 strikes a night assuming there are 10 hour (time steps in a night)
+    },}
 
 
 #Predator_Prey     
@@ -45,6 +59,7 @@ input_dictionary = {
     'Rattlesnake_Parameters':{'Body_sizes':snake_body_sizes,
                               'Initial_Body_Temperature': initial_body_temperature,
                               'initial_calories': range(300,600),
+                              'max_meals':max_meals,
                               'k': k,
                               't_pref_min': t_pref_min,
                               't_pref_max': t_pref_max,
@@ -54,35 +69,33 @@ input_dictionary = {
                               'X1_mass':0.930,
                               'X2_temp': 0.044,
                               'X3_const': -2.58,
-                              'background_death_probability':0.000001,
+                              'background_death_probability':0.01,
                               'brumination_months': [10, 11, 12, 1, 2, 3, 4],
-                              'birth_module': {
-                                            "frequency": "biennial",
+                              'birth_death_module': {
                                             "mean_litter_size": 4.6,
                                             "std_litter_size": 0.31,
                                             "upper_bound_litter_size": 8,
                                             "lower_bound_litter_size": 2,
                                             "litters_per_year": 0.5,
-                                            "partuition_months": [9, 10]
+                                            "birth_hazard_rate":1/2, # give birth every other year
+                                            "death_hazard_rate":1/18, # die once ever 18 years
                                             },
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
-                              'background_death_probability':0.0000001,
-                              'birth_module': {
-                                            "frequency": "monthly",
+                              'background_death_probability':0.01,
+                              'birth_death_module': {
                                             "mean_litter_size": 3.5,
                                             "std_litter_size": 1,
                                             "upper_bound_litter_size": 6,
                                             "lower_bound_litter_size": 1,
-                                            "litters_per_year": range(1,2),
-                                            "partuition_months": [8, 9, 10, 11, 12, 1, 2, 3, 4, 5]
+                                            "litters_per_year": 1,
+                                            "birth_hazard_rate":1, # one litter a year
+                                            "death_hazard_rate":1/5, # once every 5 years
                                             },
                               'moore': moore},
-    'Interaction_Parameters':{'Rattlesnake_KangarooRat':{'Interaction_Distance':interaction_distance,
-                                                         'Prey_Cals_per_gram': krat_cals_per_gram,
-                                                         'Digestion_Efficency':digestion_efficency,}
-                            }
+    'Interaction_Map':interaction_map
+                            
 }
 
 

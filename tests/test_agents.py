@@ -6,7 +6,6 @@ import empty_landscape as eu
 
 class TestRattlesnake(unittest.TestCase):
     def setUp(self):
-        
         self.mock_model = eu.ContinuousLandscapeModel(width=5, height=5)
         self.mock_model.month = 5
         snake_config = {

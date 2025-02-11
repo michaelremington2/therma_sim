@@ -1,23 +1,177 @@
 #!/usr/bin/python
-from . import TPC
+import TPC
 import math
 import numpy as np
-from . import agents
+import agents
+
+class Interaction_Map(object):
+    """
+    Class for handling interactions between predator and prey 
+    and managing the interaction map that holds parameters for these relationships.
+    
+    Args:
+        model: The simulation model instance (optional, for integration with the broader model).
+        interaction_map (dict): A dictionary mapping (predator, prey) tuples to their interaction parameters.
+    """
+
+    def __init__(self, model, interaction_map):
+        self.model = model  
+        self.interaction_map = interaction_map 
+    
+    def get_interaction_parameters(self, predator, prey):
+        """
+        Retrieve all interaction parameters for a given predator-prey pair.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            dict: Dictionary of interaction parameters if found, else None.
+        """
+        return self.interaction_map.get((predator, prey), None)
+    
+    def get_prey_for_predator(self, predator_label):
+        """
+        Extract all prey species associated with a given predator label.
+        
+        Parameters:
+            predator_label (str): The predator species name to filter interactions.
+            
+        Returns:
+            list: A list of unique prey species associated with the given predator.
+        """
+        return [prey for (predator, prey) in self.interaction_map.keys() if predator == predator_label]
+
+    
+    def get_interaction_distance(self, predator, prey):
+        """
+        Get the interaction (strike) distance between a predator and prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            float: Interaction distance if found, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("interaction_distance") if params else None
+
+    def get_calories_per_gram(self, predator, prey):
+        """
+        Get the calorie value per gram of prey consumed by a predator.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            float: Calories per gram if found, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("calories_per_gram") if params else None
+    
+    def get_digestion_efficiency(self, predator, prey):
+        """
+        Get the digestion efficiency of the predator for a given prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            float: Digestion efficiency (0-1) if found, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("digestion_efficiency") if params else None
+
+    def get_max_meals(self, predator, prey):
+        """
+        Get the maximum number of meals a predator can eat from a given prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            int: Max meals if found, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("max_meals") if params else None
+
+    def get_strike_success_rate(self, predator, prey):
+        """
+        Get the strike success rate of a predator attacking a specific prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            float: Strike success probability (0-1) if found, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("strike_success_rate") if params else None
+    
+    def get_expected_prey_body_size(self, predator, prey):
+        """
+        Get the strike success rate of a predator attacking a specific prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            float: Strike success probability (0-1) if found, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("expected_prey_body_size") if params else None
+    
+    def get_handling_time_range(self, predator, prey):
+        """
+        Get the handling time range of a predator consuming a specific prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            range: range object to be passed into a distribution, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("handling_time_range") if params else None
+    
+    def get_attack_rate_range(self, predator, prey):
+        """
+        Get the handling time range of a predator consuming a specific prey.
+
+        Args:
+            predator (str): The predator species name.
+            prey (str): The prey species name.
+
+        Returns:
+            range: range object to be passed into a distribution, else None.
+        """
+        params = self.get_interaction_parameters(predator, prey)
+        return params.get("attack_rate_range") if params else None
+
+
 
 
 ## Recode this to be a general predator and prey agent class
-
+# Script Retired (For now)
 
 class Interaction_Dynamics(object):
     '''
-    This is a static class that dictates the rules of interactions between a predator and prey.
+    Retired (For Now) - This is a static class that dictates the rules of interactions between a predator and prey.
     Args:
         predator_name - string to match the class
     '''
     def __init__(self,
                  model,                  
-                 predator_name: str, 
-                 prey_name: str, 
+                 predator_name: object, 
+                 prey_name: object, 
                  interaction_distance: float, 
                  calories_per_gram: float, 
                  digestion_efficiency: float,
@@ -27,12 +181,32 @@ class Interaction_Dynamics(object):
         self.predator_name = predator_name
         self.prey_name = prey_name
         self.interaction_distance = interaction_distance
-        self.calories_per_gram = calories_per_gram
-        self.digestion_efficiency = digestion_efficiency
         self.max_meals = max_meals
         self.prey_mass = 70  # grams
+        self._calories_per_gram = calories_per_gram
+        self._digestion_efficiency = digestion_efficiency
         self.prey_meal = self.calories_per_gram * self.prey_mass * self.digestion_efficiency
         self.predator_max_metabolic_state = self.prey_meal*max_meals
+
+    @property
+    def calories_per_gram(self):
+        return self._calories_per_gram
+
+    @calories_per_gram.setter
+    def calories_per_gram(self, value):
+        if value < 0:
+            raise ValueError("Calories per gram must be non-negative")
+        self._calories_per_gram = value
+
+    @property
+    def digestion_efficiency(self):
+        return self._digestion_efficiency
+
+    @digestion_efficiency.setter
+    def digestion_efficiency(self, value):
+        if not (0 <= value <= 1):
+            raise ValueError("Digestion efficiency must be between 0 and 1")
+        self._digestion_efficiency = value
 
                     
     def check_for_interaction_retired(self, snake_point, krat_point):
@@ -50,7 +224,7 @@ class Interaction_Dynamics(object):
         else:
             return False
     
-    def interaction_module(self, snake, _test=False):
+    def spatial_interaction_module(self, snake, _test=False):
         '''
         Main interaction model between agents. The model simulates point locations within a hectare then checks if a snake and a krat agent 
         are within striking distance of eachother if they are active.
@@ -69,7 +243,7 @@ class Interaction_Dynamics(object):
         else:
             return
 
-    def strike_module(self, krat, snake):
+    def spatial_strike_module(self, krat, snake):
         '''
         Module for simulating a strike between a krat and a snake.
         Args:

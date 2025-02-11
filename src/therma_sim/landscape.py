@@ -5,10 +5,78 @@ import matplotlib.pyplot as plt
 import math
 #import networkx as nx
 import pandas as pd
-from . import agents
+import agents
 
-###
-# Set up landscape to allow for tests and ability to have small landscapes.
+
+class Spatially_Implicit_Landscape(object):
+    def __init__(self, model, width: int, height:int, thermal_profile_csv_fp: str):
+        self.model = model
+        ## Change spaticial dementions, prolly meters
+        self.hectare_to_meter = 10000
+        self.width_hectare = width
+        self.height_hectare = height
+        self.landscape_size = self.width_hectare*self.height_hectare
+        self.microhabitats = ['Burrow', 'Open']
+        self.thermal_profile = pd.read_csv(thermal_profile_csv_fp, header=0)
+        self._burrow_temperature = None
+        self._open_temperature = None
+
+    @property
+    def burrow_temperature(self):
+        return self._burrow_temperature
+
+    @burrow_temperature.setter
+    def burrow_temperature(self, value):
+        self._burrow_temperature = value
+
+    @property
+    def open_temperature(self):
+        return self._open_temperature
+
+    @open_temperature.setter
+    def open_temperature(self, value):
+        self._open_temperature = value
+
+    def meters_to_hectares(self, val):
+        '''Val is any value in meters you need to conver to hectares'''
+        return float(val / self.hectare_to_meter)
+    
+    def set_landscape_temperatures(self, step_id, spatial_heterogeonus=False):
+        '''
+        Helper function for setting and resetting the thermal temperatures in the landscape
+        '''
+        open_emp_mean = self.thermal_profile['Open_mean_Temperature'].iloc[step_id]
+        open_emp_std = self.thermal_profile['Open_stddev_Temperature'].iloc[step_id]
+        burrow_emp_mean = self.thermal_profile['Burrow_mean_Temperature'].iloc[step_id]
+        burrow_emp_std = self.thermal_profile['Burrow_stddev_Temperature'].iloc[step_id]
+        self.open_temperature = open_emp_mean
+        self.burrow_temperature = burrow_emp_mean
+
+
+    def count_steps_in_one_year(self) -> int:
+        """
+        Counts the number of rows (steps) between the earliest date in the dataset
+        and one year later, assuming the DateTime column is named 'DateTime'.
+
+        Returns:
+        int: Number of steps (rows) within one year from the first recorded date.
+        """
+        # Convert the 'DateTime' column to datetime format
+        self.thermal_profile['DateTime'] = pd.to_datetime(self.thermal_profile['DateTime'])
+
+        # Find the first date
+        first_day = self.thermal_profile['DateTime'].min()
+
+        # Compute the date one year later
+        one_year_later = first_day + pd.DateOffset(years=1)
+
+        # Count the number of rows (steps) in the one-year range
+        steps_count = self.thermal_profile[
+            (self.thermal_profile['DateTime'] >= first_day) &
+            (self.thermal_profile['DateTime'] < one_year_later)
+        ].shape[0]
+
+        return steps_count
 
 
 class Continous_Landscape(mesa.space.ContinuousSpace):
@@ -114,10 +182,6 @@ class Continous_Landscape(mesa.space.ContinuousSpace):
         '''
         Helper function for setting and resetting the thermal temperatures in the landscape
         '''
-        ## Come up with a method w
-        ### Maybe switch to 2 state model or 3 state model
-        # shrub_emp_mean = self.thermal_profile['Shrub_mean_Temperature'].iloc[step_id]
-        # shrub_emp_std = self.thermal_profile['Shrub_stddev_Temperature'].iloc[step_id]
         open_emp_mean = self.thermal_profile['Open_mean_Temperature'].iloc[step_id]
         open_emp_std = self.thermal_profile['Open_stddev_Temperature'].iloc[step_id]
         burrow_emp_mean = self.thermal_profile['Burrow_mean_Temperature'].iloc[step_id]

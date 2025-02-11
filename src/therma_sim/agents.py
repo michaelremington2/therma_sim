@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import math
 import networkx as nx
 import pandas as pd
-from . import metabolism
-from . import behavior 
-from . import birth
+import metabolism
+import behavior 
+import birth_death
 
 
 # Rattlesnake temperature model
@@ -18,16 +18,19 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, initial_pos, snake_config=None):
+    def __init__(self, unique_id, model, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
-        self.snake_config = snake_config
+        self.snake_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
-        if snake_config is not None:
-            self.metabolism = metabolism.EctothermMetabolism(initial_metabolic_state=self.snake_config['initial_calories'],
-                                                            X1_mass=self.snake_config['X1_mass'],
-                                                            X2_temp=self.snake_config['X2_temp'],
-                                                            X3_const=self.snake_config['X3_const'])
+        if config is not None:
+            self.metabolism = metabolism.EctothermMetabolism(org=self,
+                                                             model=self.model,
+                                                             initial_metabolic_state=self.snake_config['initial_calories'],
+                                                             max_meals = self.snake_config['max_meals'],
+                                                             X1_mass=self.snake_config['X1_mass'],
+                                                             X2_temp=self.snake_config['X2_temp'],
+                                                             X3_const=self.snake_config['X3_const'])
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
             self.moore = self.snake_config['moore']
             self.brumation_months = self.snake_config['brumination_months']
@@ -42,7 +45,7 @@ class Rattlesnake(mesa.Agent):
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
             self.max_thermal_accuracy = 5 #Replace this with an input value later
             # Birth Module
-            self.birth_module = self.initiate_birth_module(birth_config=self.snake_config['birth_module'])
+            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.snake_config['birth_death_module'])
         else:
             # Initialize attributes to None or defaults
             self.metabolism = None
@@ -57,7 +60,7 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_max = None
             self.t_opt = None
             self.strike_performance_opt = None
-            self.birth_module = None
+            self.birth_death_module = None
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
@@ -76,6 +79,11 @@ class Rattlesnake(mesa.Agent):
         # Agent logisic checks
         self._active = False
         self._alive = True
+
+    @property
+    def species_name(self):
+        """Returns the class name as a string."""
+        return self.__class__.__name__
 
     @property
     def current_behavior(self):
@@ -130,16 +138,15 @@ class Rattlesnake(mesa.Agent):
     def pos(self, value):
         self._pos = value
 
-    def initiate_birth_module(self, birth_config):
+    def initiate_birth_death_module(self, birth_config):
         '''
         Helper function for setting up bith module for organisms
         '''
-        months_since_last_litter = np.random.choice(range(0,12))
-        return birth.Birth_Module(model=self.model, agent=self,
-                frequency=birth_config["frequency"], mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
-                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["upper_bound_litter_size"],
-                litters_per_year=birth_config["litters_per_year"], months_since_last_litter=months_since_last_litter,
-                partuition_months=birth_config["partuition_months"])
+        return birth_death.Birth_Death_Module(model=self.model, agent=self,
+                mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
+                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["lower_bound_litter_size"],
+                litters_per_year=birth_config["litters_per_year"],
+                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"])
 
     def set_mass(self, body_size_range):
         mass = np.random.uniform(min(body_size_range), max(body_size_range))
@@ -178,7 +185,6 @@ class Rattlesnake(mesa.Agent):
         old_body_temp = self.body_temperature
         self.body_temperature = self.cooling_eq_k(k=self.k, t_body=self.body_temperature, t_env=t_env, delta_t=delta_t)
         return
-
     
     def log_choice(self, microhabitat, behavior, body_temp):
         '''
@@ -208,31 +214,29 @@ class Rattlesnake(mesa.Agent):
         if self.metabolism.metabolic_state<=0:
             self.alive = False
 
-    def random_death(self):
-        '''
-        Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
-        '''
-        random_val = np.random.random()
-        if random_val <= self.background_death_probability:
-            self.alive = False
-
     def move(self):
         pass
 
-    def step(self):
-        self.random_death()
+    def agent_checks(self):
+        '''
+        Helper function run in the step function to run all functions that are binary checks of the individual to manage its state of being active, alive, or giving birth.
+        '''
         self.is_starved()
         self.activate_snake()
-        self.birth_module.step()
-        self.move()
-        #self.generate_random_pos()
-        availability = self.model.landscape.get_mh_availability_dict(pos=self.pos)
-        overall_utility = self.utility_module.calculate_overall_utility_additive_b1mh2(utility_scores = self.utility_scores, mh_availability = availability, behavior_preferences=self.behavior_weights)
-        self.current_behavior = self.behavior_module.choose_behavior()
-        self.current_microhabitat = None # Pick up hear tomorrow
+        self.birth_death_module.step()
+
+    def simulate_decision(self):
+        '''
+        Function to facilitate agents picking a behavior and microhabitat
+        '''
+        self.behavior_module.step()
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
         self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coeffcient=self.activity_coefficients[self.current_behavior])
         self.update_body_temp(t_env, delta_t=self.delta_t)
+
+    def step(self):
+        self.agent_checks()
+        self.simulate_decision()
         self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
         #print(f'Metabolic State {self.metabolism.metabolic_state}')
         #self.print_history()
@@ -244,26 +248,31 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, initial_pos, krat_config=None):
+    def __init__(self, unique_id, model, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
-        self.krat_config = krat_config
+        self.krat_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
         if self.krat_config is not None:
             self.active_hours = self.krat_config['active_hours']
             self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
             self.moore = self.krat_config['moore']
             self.background_death_probability = self.krat_config['background_death_probability']
-            self.birth_module = self.initiate_birth_module(birth_config=self.krat_config['birth_module'])
+            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'])
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
             self.mass = 10
             self.moore = True
             self.background_death_probability = 0.0
-            self.birth_module = None
+            self.birth_death_module = None
         # Agent is actively foraging
         self._active = False
         self._alive = True
+
+    @property
+    def species_name(self):
+        """Returns the class name as a string."""
+        return self.__class__.__name__
 
     @property
     def active(self):
@@ -307,39 +316,26 @@ class KangarooRat(mesa.Agent):
         else:
             self.active = False
 
-    def initiate_birth_module(self, birth_config):
+    def initiate_birth_death_module(self, birth_config):
         '''
         Helper function for setting up bith module for organisms
         '''
-        months_since_last_litter = np.random.choice(range(0,3))
-        return birth.Birth_Module(model=self.model, agent=self,
-                frequency=birth_config["frequency"], mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
-                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["upper_bound_litter_size"],
-                litters_per_year=birth_config["litters_per_year"], months_since_last_litter=months_since_last_litter,
-                partuition_months=birth_config["partuition_months"])
-    
-    def random_death(self):
-        '''
-        Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
-        '''
-        random_val = np.random.random()
-        if random_val <= self.background_death_probability:
-            self.alive = False
+        return birth_death.Birth_Death_Module(model=self.model, agent=self,
+                mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
+                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["lower_bound_litter_size"],
+                litters_per_year=birth_config["litters_per_year"],
+                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"])
 
     def von_mises_move(self, current_pos):
         direction = np.random.vonmises()
         
-    
     def move(self):
         pass
 
     def step(self):
         hour = self.model.landscape.thermal_profile['hour'].iloc[self.model.step_id]
-        self.random_death()
         self.activate_krat(hour=hour)
-        self.birth_module.step()
-        if self.active:
-            self.generate_random_pos()
+        self.birth_death_module.step()
 
 
 

@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class EctothermMetabolism(object):
-    def __init__(self, initial_metabolic_state, X1_mass, X2_temp, X3_const):
+    def __init__(self, org, model, initial_metabolic_state, max_meals, X1_mass, X2_temp, X3_const):
+        self.org = org
+        self.model = model
         self.mlo2_to_joules = 19.874
         self.joules_to_cals = 2.39e-4
         self.X1_mass = X1_mass
@@ -11,6 +13,8 @@ class EctothermMetabolism(object):
         self.X3_const = X3_const
         self._metabolic_state = None
         self.metabolic_state = initial_metabolic_state
+        self.max_meals = max_meals
+        self.initialize_max_metabolic_state()
 
 
     @property
@@ -38,12 +42,17 @@ class EctothermMetabolism(object):
         else:
             raise ValueError("`metabolic_state` must be a range, list, tuple, or single numeric value.")
 
-    def initialize_max_metabolic_state(self, value):
+    def initialize_max_metabolic_state(self):
         """
         Helper function to initialize the attribute max_metabolic_state. 
         This value is calculated in the interaction class.
         """
-        self.max_metabolic_state = value
+        predator_label = self.org.species_name
+        prey_label = self.model.interaction_map.get_prey_for_predator(predator_label = predator_label)
+        prey_label = prey_label[0] #will make more sophisticated eventually!
+        calories_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey_label)
+        expected_prey_body_size = self.model.interaction_map.get_expected_prey_body_size(predator=predator_label, prey=prey_label)
+        self.max_metabolic_state = self.max_meals*calories_per_gram*expected_prey_body_size
 
     def smr_eq(self, mass, temperature):
         '''This returns VO2 which is a proxy for SMR. 
@@ -138,11 +147,12 @@ class EctothermMetabolism(object):
                                         cal_per_gram_conversion=cal_per_gram_conversion,
                                         percent_digestion_cals=percent_digestion_cals)
         # print(f'Cals_gained {cals_gained}, metabolic state_ before {self.metabolic_state}')
-        # self.metabolic_state += cals_gained
+        self.metabolic_state += cals_gained
         # print(f'Cals_gained {cals_gained}, metabolic state_ after {self.metabolic_state}')
 
 
 
 if __name__ ==  "__main__":
-    met = EctothermMetabolism()
-    met.energy_expendeture_graph()
+    pass
+    # met = EctothermMetabolism()
+    # met.energy_expendeture_graph()
