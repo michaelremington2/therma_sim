@@ -115,7 +115,8 @@ class EctothermBehavior(object):
                     self.snake.metabolism.cals_gained(prey_mass=prey.mass,
                                                     cal_per_gram_conversion=cal_per_gram,
                                                     percent_digestion_cals=pecent_digestion_cals)
-                    prey.alive = False 
+                    prey.alive = False
+                    self.model.remove_agent(prey) 
         # Select a krat at random from the active list
         # Get its body size
         return 

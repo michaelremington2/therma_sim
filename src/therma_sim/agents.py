@@ -18,11 +18,12 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, age=0, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
         self.snake_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
+        self.age = age
         if config is not None:
             self.metabolism = metabolism.EctothermMetabolism(org=self,
                                                              model=self.model,
@@ -34,7 +35,7 @@ class Rattlesnake(mesa.Agent):
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
             self.moore = self.snake_config['moore']
             self.brumation_months = self.snake_config['brumination_months']
-            self.background_death_probability = self.snake_config['background_death_probability']
+            self.background_predation_probability = self.snake_config['background_predation_probability']
             # Temperature
             self.delta_t = self.snake_config['delta_t']
             self._body_temperature = self.snake_config['Initial_Body_Temperature']
@@ -45,6 +46,7 @@ class Rattlesnake(mesa.Agent):
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
             self.max_thermal_accuracy = 5 #Replace this with an input value later
             # Birth Module
+            self.reproductive_age_steps = self.snake_config['reproductive_age_years']*self.model.steps_per_year
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.snake_config['birth_death_module'])
         else:
             # Initialize attributes to None or defaults
@@ -52,7 +54,7 @@ class Rattlesnake(mesa.Agent):
             self.mass = None
             self.moore = False
             self.brumation_months = []
-            self.background_death_probability = 0.0
+            self.background_predation_probability = 0.0
             self.delta_t = None
             self._body_temperature = None
             self.k = None
@@ -79,6 +81,8 @@ class Rattlesnake(mesa.Agent):
         # Agent logisic checks
         self._active = False
         self._alive = True
+        self._reproductive_agent = False
+
 
     @property
     def species_name(self):
@@ -129,6 +133,14 @@ class Rattlesnake(mesa.Agent):
         self._alive = value
         if value==False:
             self.active=False
+
+    @property
+    def reproductive_agent(self):
+        return self._reproductive_agent
+
+    @reproductive_agent.setter
+    def reproductive_agent(self, value):
+        self._reproductive_agent = value  # Ensure manual setting works
 
     @property
     def pos(self):
@@ -206,6 +218,24 @@ class Rattlesnake(mesa.Agent):
     def print_history(self):
         print(self.behavior_history)
         print(self.microhabitat_history)
+
+    def random_death(self):
+        '''
+        Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
+        '''
+        random_val = np.random.random()
+        if random_val <= self.background_predation_probability:
+            self.alive = False
+
+    def check_reproductive_status(self):
+        """
+        This function checks if a rattlesnake is reproductive based on age and sex.
+        It should be called inside `agent_checks()`.
+        """
+        if self.sex == 'Female' and self.age >= self.reproductive_age_steps:
+            self._reproductive_agent = True  
+        else:
+            self._reproductive_agent = False 
     
     def is_starved(self):
         '''
@@ -222,8 +252,12 @@ class Rattlesnake(mesa.Agent):
         Helper function run in the step function to run all functions that are binary checks of the individual to manage its state of being active, alive, or giving birth.
         '''
         self.is_starved()
+        self.random_death()
+        if self.model.schedule.time % self.model.steps_per_month == 0:
+            self.age += 1
         self.activate_snake()
-        self.birth_death_module.step()
+        if self.reproductive_agent:
+            self.birth_death_module.step()
 
     def simulate_decision(self):
         '''
@@ -248,22 +282,24 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, age=0, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
         self.krat_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
+        self.age_steps = age
         if self.krat_config is not None:
             self.active_hours = self.krat_config['active_hours']
             self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
             self.moore = self.krat_config['moore']
-            self.background_death_probability = self.krat_config['background_death_probability']
+            self.background_predation_probability = self.krat_config['background_predation_probability']
+            self.reproductive_age_steps = int(self.krat_config['reproductive_age_years']*self.model.steps_per_year)
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'])
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
             self.mass = 10
             self.moore = True
-            self.background_death_probability = 0.0
+            self.background_predation_probability= 0.0
             self.birth_death_module = None
         # Agent is actively foraging
         self._active = False
@@ -300,6 +336,25 @@ class KangarooRat(mesa.Agent):
     def pos(self, value):
         self._pos = value
 
+    
+    @property
+    def reproductive_agent(self):
+        return self._reproductive_agent
+
+    @reproductive_agent.setter
+    def reproductive_agent(self, value):
+        self._reproductive_agent = value  # Ensure manual setting works
+
+    def check_reproductive_status(self):
+        """
+        This function checks if a rattlesnake is reproductive based on age and sex.
+        It should be called inside `agent_checks()`.
+        """
+        if self.sex == 'Female' and self.age_steps >= self.reproductive_age_steps:
+            self._reproductive_agent = True  
+        else:
+            self._reproductive_agent = False  
+
     def generate_random_pos(self):
         hectare_size = 100
         x = np.random.uniform(0, hectare_size)
@@ -315,6 +370,14 @@ class KangarooRat(mesa.Agent):
             self.active = True
         else:
             self.active = False
+
+    def random_death(self):
+        '''
+        Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
+        '''
+        random_val = np.random.random()
+        if random_val <= self.background_predation_probability:
+            self.alive = False
 
     def initiate_birth_death_module(self, birth_config):
         '''
@@ -334,8 +397,12 @@ class KangarooRat(mesa.Agent):
 
     def step(self):
         hour = self.model.landscape.thermal_profile['hour'].iloc[self.model.step_id]
+        self.random_death()
+        self.age_steps += 1
         self.activate_krat(hour=hour)
-        self.birth_death_module.step()
+        self.check_reproductive_status()
+        if self.reproductive_agent:
+            self.birth_death_module.step()
 
 
 

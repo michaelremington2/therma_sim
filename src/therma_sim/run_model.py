@@ -43,8 +43,8 @@ interaction_map = {
         "calories_per_gram": krat_cals_per_gram,
         "digestion_efficiency": digestion_efficency,
         "expected_prey_body_size": halfway_in_range(r=krat_body_sizes),
-        "handling_time_range": {"min": 15/60, "max": 120/60}, # scaled to a hour
-        "attack_rate_range": {"min": 1/10, "max": 5/10} # 1 to 5 strikes a night assuming there are 10 hour (time steps in a night)
+        "handling_time_range": {"min": 15/70, "max": 180/70}, # scaled to a hour
+        "attack_rate_range": {"min": 0/10, "max": 2/10} # 1 to 5 strikes a night assuming there are 10 hour (time steps in a night)
     },}
 
 
@@ -60,6 +60,8 @@ input_dictionary = {
                               'Initial_Body_Temperature': initial_body_temperature,
                               'initial_calories': range(300,600),
                               'max_meals':max_meals,
+                              'reproductive_age_years':2,
+                              'max_age':20,
                               'k': k,
                               't_pref_min': t_pref_min,
                               't_pref_max': t_pref_max,
@@ -69,7 +71,7 @@ input_dictionary = {
                               'X1_mass':0.930,
                               'X2_temp': 0.044,
                               'X3_const': -2.58,
-                              'background_death_probability':0.01,
+                              'background_predation_probability':0.00001,
                               'brumination_months': [10, 11, 12, 1, 2, 3, 4],
                               'birth_death_module': {
                                             "mean_litter_size": 4.6,
@@ -83,7 +85,9 @@ input_dictionary = {
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
-                              'background_death_probability':0.01,
+                              'background_predation_probability':0.0001,
+                              'reproductive_age_years':1/6,
+                              'max_age':6,
                               'birth_death_module': {
                                             "mean_litter_size": 3.5,
                                             "std_litter_size": 1,
@@ -91,7 +95,7 @@ input_dictionary = {
                                             "lower_bound_litter_size": 1,
                                             "litters_per_year": 1,
                                             "birth_hazard_rate":1, # one litter a year
-                                            "death_hazard_rate":1/5, # once every 5 years
+                                            "death_hazard_rate":1/5, # once every 5 years (1/5)
                                             },
                               'moore': moore},
     'Interaction_Map':interaction_map

@@ -40,6 +40,7 @@ class ThermaSim(mesa.Model):
         ## Make Initial Landscape
         self.landscape = self.make_landscape(model=self)
         self.steps_per_year = self.landscape.count_steps_in_one_year()
+        self.steps_per_month = self.steps_per_year / 12
         self.interaction_map = self.make_interaction_module(model=self)
         ## Intialize agents
         self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
@@ -186,7 +187,7 @@ class ThermaSim(mesa.Model):
         return new_local_density
         
     ## Intialize populations and births
-    def give_birth(self, species_name, agent_id, pos=None, parent=None):
+    def give_birth(self, species_name, agent_id, pos=None, parent=None, initial_pop=False):
         """
         Helper function - Adds new agents to the landscape
         """
@@ -200,8 +201,13 @@ class ThermaSim(mesa.Model):
 
         agent_class, param_func = species_map[species_name]
         agent_params = param_func(config=self.config)
+        if initial_pop:
+            max_age = agent_params['max_age']
+            rand_age = np.random.uniform(0,max_age*self.steps_per_year)
+            agent = agent_class(unique_id=agent_id, model=self, config=agent_params, age = rand_age)
+        else:
+            agent = agent_class(unique_id=agent_id, model=self, config=agent_params)
 
-        agent = agent_class(unique_id=agent_id, model=self, config=agent_params)
         if pos is not None:
             self.place_agent(agent, pos)
         self.schedule.add(agent)
@@ -225,9 +231,9 @@ class ThermaSim(mesa.Model):
                         x = np.random.uniform(x_hect, x_hect + self.hectare_to_meter)
                         y = np.random.uniform(y_hect, y_hect + self.hectare_to_meter)
                         pos = (x,y)
-                        self.give_birth(species_name=species, pos=pos, agent_id=agent_id)
+                        self.give_birth(species_name=species, pos=pos, initial_pop=True)
                     else:
-                        self.give_birth(species_name=species, agent_id=agent_id)
+                        self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
                     agent_id +=1
                     self.next_agent_id = agent_id+1
                 #print(pos,agent_id)
@@ -289,27 +295,26 @@ class ThermaSim(mesa.Model):
             return None  
         return np.random.choice(active_krats)
     
-    def remove_dead_agents(self):
-        '''
-        Helper function: Create a list of agents to remove because they are dead
-        '''
-        dead_snakes = [snake for snake in self.schedule.agents_by_type[agents.Rattlesnake].values() if not snake.alive]
-        for snake in dead_snakes:
-            self.schedule.remove(snake)
+    def remove_agent(self, agent):
+        self.schedule.remove(agent)
 
+    def remove_dead_agents(self):
+        dead_snakes = [snake for snake in self.schedule.agents_by_type[agents.Rattlesnake].values() if not snake.alive]
         dead_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if not krat.alive]
-        for krat in dead_krats:
-            self.schedule.remove(krat)
+        for agent in dead_snakes + dead_krats:
+            self.schedule.remove(agent) 
 
     def too_many_agents_check(self):
         total_agents = len(self.schedule.agents_by_type[agents.KangarooRat].values()) + len(self.schedule.agents_by_type[agents.Rattlesnake].values())
-        if total_agents > 50000:
+        if total_agents > 20000:
            raise RuntimeError(f"Too many agents in the simulation: {total_agents}")
 
     def step(self):
         '''
         Main model step function used to run one step of the model.
         '''
+        self.too_many_agents_check()
+        self.remove_dead_agents()
         self.hour = self.landscape.thermal_profile['hour'].iloc[self.step_id]
         self.day = self.landscape.thermal_profile['day'].iloc[self.step_id]
         self.month = self.landscape.thermal_profile['month'].iloc[self.step_id]
@@ -326,7 +331,7 @@ class ThermaSim(mesa.Model):
         for krat in krat_shuffle:
             krat.step()
         krat_shuffle = self.randomize_krats()
-        self.remove_dead_agents()
+        
         self.step_id += 1  # Increment the step counter
         self.schedule.step()
 
