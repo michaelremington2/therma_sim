@@ -32,7 +32,7 @@ krat_active_hours = [20, 21, 22, 23, 24, 0, 1, 2, 3, 4, 5, 6]
 interaction_distance = 0.068 # Parameter is from https://www.nature.com/articles/srep40412/tables/1
 krat_cals_per_gram = 1.38 # Technically for ground squirrels. Metric is from Crowell 2021
 digestion_efficency = 0.8 # Assumed rate of calorie assimilation. Metric is from crowell 2021
-performance_opt = 0.21 #From Grace, Rulon paper
+performance_opt = 0.5 #From Grace, Rulon paper 0.21
 
 initial_population_sizes = {'KangarooRat': range(3,14),
                             'Rattlesnake': range(0,1)} # Individuals per hectare
@@ -43,8 +43,8 @@ interaction_map = {
         "calories_per_gram": krat_cals_per_gram,
         "digestion_efficiency": digestion_efficency,
         "expected_prey_body_size": halfway_in_range(r=krat_body_sizes),
-        "handling_time_range": {"min": 15/70, "max": 180/70}, # scaled to a hour
-        "attack_rate_range": {"min": 0/10, "max": 2/10} # 1 to 5 strikes a night assuming there are 10 hour (time steps in a night)
+        "handling_time_range": {"min": 15/60, "max": 180/60}, # scaled to a hour
+        "attack_rate_range": {"min": 0/10, "max": 3/10} # 1 to 5 strikes a night assuming there are 10 hour (time steps in a night)
     },}
 
 
@@ -62,6 +62,7 @@ input_dictionary = {
                               'max_meals':max_meals,
                               'reproductive_age_years':2,
                               'max_age':20,
+                              'max_thermal_accuracy': 5, 
                               'k': k,
                               't_pref_min': t_pref_min,
                               't_pref_max': t_pref_max,
@@ -71,7 +72,7 @@ input_dictionary = {
                               'X1_mass':0.930,
                               'X2_temp': 0.044,
                               'X3_const': -2.58,
-                              'background_predation_probability':0.00001,
+                              'annual_survival_probability':0.9, 
                               'brumination_months': [10, 11, 12, 1, 2, 3, 4],
                               'birth_death_module': {
                                             "mean_litter_size": 4.6,
@@ -85,8 +86,8 @@ input_dictionary = {
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
-                              'background_predation_probability':0.0001,
-                              'reproductive_age_years':1/6,
+                              'annual_survival_probability':0.55,
+                              'reproductive_age_years':1/4,
                               'max_age':6,
                               'birth_death_module': {
                                             "mean_litter_size": 3.5,

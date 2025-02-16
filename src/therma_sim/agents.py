@@ -18,7 +18,7 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, age=0, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, hourly_survival_probability = 1, age=0, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.pos = initial_pos
         self.snake_config = config
@@ -35,7 +35,7 @@ class Rattlesnake(mesa.Agent):
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
             self.moore = self.snake_config['moore']
             self.brumation_months = self.snake_config['brumination_months']
-            self.background_predation_probability = self.snake_config['background_predation_probability']
+            self.hourly_survival_probability = hourly_survival_probability
             # Temperature
             self.delta_t = self.snake_config['delta_t']
             self._body_temperature = self.snake_config['Initial_Body_Temperature']
@@ -44,9 +44,9 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_max = self.snake_config['t_pref_max']
             self.t_opt = self.snake_config['t_opt']
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
-            self.max_thermal_accuracy = 5 #Replace this with an input value later
+            self.max_thermal_accuracy = self.snake_config['max_thermal_accuracy'] #Replace this with an input value later
             # Birth Module
-            self.reproductive_age_steps = self.snake_config['reproductive_age_years']*self.model.steps_per_year
+            self.reproductive_age_steps = self.set_reproductive_age_steps(self, reproductive_age_years = self.snake_config['reproductive_age_years'])
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.snake_config['birth_death_module'])
         else:
             # Initialize attributes to None or defaults
@@ -54,7 +54,7 @@ class Rattlesnake(mesa.Agent):
             self.mass = None
             self.moore = False
             self.brumation_months = []
-            self.background_predation_probability = 0.0
+            self.hourly_survival_probability = 1
             self.delta_t = None
             self._body_temperature = None
             self.k = None
@@ -150,6 +150,25 @@ class Rattlesnake(mesa.Agent):
     def pos(self, value):
         self._pos = value
 
+    def set_reproductive_age_steps(self, reproductive_age_years):
+        """
+        Sets the reproductive age in simulation steps if not already set.
+
+        Args:
+            reproductive_age_years (float): Age at which reproduction begins, in years.
+
+        Returns:
+            int: The reproductive age in simulation steps.
+        """
+        existing_value = self.model.get_static_variable(species=self.species_name, variable_name='reproductive_age_steps')
+
+        if existing_value is None:
+            reproductive_age_steps = reproductive_age_years * self.model.steps_per_year
+            self.model.set_static_variable(species=self.species_name, variable_name='reproductive_age_steps', value=reproductive_age_steps)
+            return reproductive_age_steps  
+        return existing_value
+
+
     def initiate_birth_death_module(self, birth_config):
         '''
         Helper function for setting up bith module for organisms
@@ -180,7 +199,11 @@ class Rattlesnake(mesa.Agent):
         return self.activity_coefficients[self.current_behavior]
 
     def cooling_eq_k(self, k, t_body, t_env, delta_t):
-        return t_env+(t_body-t_env)*math.exp(-k*delta_t) # add time back in if it doesnt work
+        exp_decay = self.model.get_static_variable(species=self.species_name, variable_name='exp_decay')
+        if exp_decay is None:
+            exp_decay = math.exp(-k*delta_t)
+            self.model.set_static_variable(species=self.species_name, variable_name='exp_decay', value=exp_decay)
+        return t_env+(t_body-t_env)*exp_decay
     
     def get_t_env(self, current_microhabitat):
         if current_microhabitat=='Burrow':
@@ -193,9 +216,9 @@ class Rattlesnake(mesa.Agent):
             raise ValueError('Microhabitat Property Value cant be found')
         return t_env
     
-    def update_body_temp(self, t_env, delta_t):
+    def update_body_temp(self, t_env):
         old_body_temp = self.body_temperature
-        self.body_temperature = self.cooling_eq_k(k=self.k, t_body=self.body_temperature, t_env=t_env, delta_t=delta_t)
+        self.body_temperature = self.cooling_eq_k(k=self.k, t_body=self.body_temperature, t_env=t_env, delta_t=self.delta_t)
         return
     
     def log_choice(self, microhabitat, behavior, body_temp):
@@ -223,9 +246,7 @@ class Rattlesnake(mesa.Agent):
         '''
         Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
         '''
-        random_val = np.random.random()
-        if random_val <= self.background_predation_probability:
-            self.alive = False
+        self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
 
     def check_reproductive_status(self):
         """
@@ -266,12 +287,12 @@ class Rattlesnake(mesa.Agent):
         self.behavior_module.step()
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
         self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coeffcient=self.activity_coefficients[self.current_behavior])
-        self.update_body_temp(t_env, delta_t=self.delta_t)
+        self.update_body_temp(t_env)
 
     def step(self):
         self.agent_checks()
         self.simulate_decision()
-        self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
+        #self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
         #print(f'Metabolic State {self.metabolism.metabolic_state}')
         #self.print_history()
 
@@ -292,14 +313,14 @@ class KangarooRat(mesa.Agent):
             self.active_hours = self.krat_config['active_hours']
             self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
             self.moore = self.krat_config['moore']
-            self.background_predation_probability = self.krat_config['background_predation_probability']
+            self.hourly_survival_probability = self.bernouli_trial_hourly(annual_probability=self.krat_config['annual_survival_probability'])
             self.reproductive_age_steps = int(self.krat_config['reproductive_age_years']*self.model.steps_per_year)
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'])
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
             self.mass = 10
             self.moore = True
-            self.background_predation_probability= 0.0
+            self.hourly_survival_probability = 1
             self.birth_death_module = None
         # Agent is actively foraging
         self._active = False
@@ -371,13 +392,18 @@ class KangarooRat(mesa.Agent):
         else:
             self.active = False
 
+    def bernouli_trial_hourly(self, annual_probability):
+        '''
+        Used to calculate hourly probability of survival
+        '''
+        P_H = annual_probability ** (1 / self.model.steps_per_year)
+        return P_H
+
     def random_death(self):
         '''
         Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
         '''
-        random_val = np.random.random()
-        if random_val <= self.background_predation_probability:
-            self.alive = False
+        self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
 
     def initiate_birth_death_module(self, birth_config):
         '''

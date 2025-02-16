@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import numpy as np
-from scipy.special import softmax
 import ThermaNewt.sim_snake_tb as tn
 
 class EctothermBehavior(object):
@@ -16,16 +15,8 @@ class EctothermBehavior(object):
         '''
         Helper function for calculating thermal accuracy 
         '''
-        if self.snake.body_temperature < self.snake.t_pref_min:
-            db = np.abs(float(self.snake.t_pref_min) - float(self.snake.body_temperature))
-            state = 'cold'
-        elif self.snake.body_temperature > self.snake.t_pref_max:
-            db = np.abs(float(self.snake.t_pref_max) - float(self.snake.body_temperature))
-            state = 'hot'
-        else:
-            db = 0.0
-            state = 'neutral'
-        return db, state
+        db = np.abs(float(self.snake.t_opt) - float(self.snake.body_temperature))
+        return db
     
     def get_metabolic_state_variables(self):
         return self.snake.metabolism.metabolic_state, self.snake.metabolism.max_metabolic_state
@@ -36,22 +27,23 @@ class EctothermBehavior(object):
             x=1
         return x
     
-    def holling_type_2(self, prey_density, attack_rate, handling_time):
+    def holling_type_2(self, prey_density, strike_success, attack_rate, handling_time):
         """
         Computes the Holling Type II functional response.
 
         Parameters:
         prey_density (float or array): Prey density (prey per hectare or meter)
+        strike_success (float): probability of a successful strike
         attack_rate (float): Attack rate (area searched per predator per time unit)
         handling_time (float): Handling time (time per prey item)
 
         Returns:
         float or array: Number of prey consumed per predator per unit time
         """
-        return (attack_rate * prey_density) / (1 + attack_rate * handling_time * prey_density)
+        return ((strike_success*attack_rate) * prey_density) / (1 + (strike_success*attack_rate) * handling_time * prey_density)
     
     def set_utilities(self):
-        db, thermal_state = self.thermal_accuracy_calculator()
+        db = self.thermal_accuracy_calculator()
         metabolic_state, max_metabolic_state = self.get_metabolic_state_variables()
         thermoregulate_utility = self.scale_value(value=db, max_value=self.snake.max_thermal_accuracy)
         rest_utility = self.scale_value(value=metabolic_state, max_value=max_metabolic_state)
@@ -62,8 +54,7 @@ class EctothermBehavior(object):
     def set_behavioral_weights(self):
         from scipy.special import softmax
         utilities = self.set_utilities()
-        masked_utility = np.where(utilities == 0, -np.inf, utilities)
-        behavioral_weights = softmax(masked_utility)
+        behavioral_weights = self.model.softmax_lookup_table.get_probabilities(utilities)
         return behavioral_weights
     
     def choose_behavior(self):
@@ -99,6 +90,7 @@ class EctothermBehavior(object):
         handling_time = np.random.uniform(handling_time_range['min'], handling_time_range['max'])
         #Expected_prey
         expected_prey_consumed = self.holling_type_2(prey_density=prey_density,
+                                                     strike_success=self.snake.strike_performance_opt,
                                                      attack_rate=attack_rate, 
                                                      handling_time=handling_time)
         prey_consumed = np.random.poisson(expected_prey_consumed)
@@ -169,7 +161,7 @@ class EctothermBehavior(object):
             action()
         else:
             raise ValueError(f"Unknown behavior: {behavior}")
-
-
         
+
+
 

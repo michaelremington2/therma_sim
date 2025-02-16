@@ -11,6 +11,7 @@ import json
 import landscape
 import agents 
 import interaction
+import utility_softmax_lookup as usl
 import uuid
 
 warnings.filterwarnings("ignore")
@@ -19,11 +20,11 @@ class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
-    def __init__(self, config, seed=None, _test=False):
+    def __init__(self, config, seed=42, _test=False):
+        self.running = True
         self.config = config
         self.initial_agents_dictionary = self.get_initial_population_params(config=self.config)
         self.step_id = 0
-        self.running = True
         self.seed = seed
         self._hour = None
         self._day = None
@@ -42,6 +43,8 @@ class ThermaSim(mesa.Model):
         self.steps_per_year = self.landscape.count_steps_in_one_year()
         self.steps_per_month = self.steps_per_year / 12
         self.interaction_map = self.make_interaction_module(model=self)
+        self.initiate_species_map()
+        self.softmax_lookup_table = usl.SoftmaxLookupTable()
         ## Intialize agents
         self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
 
@@ -60,6 +63,8 @@ class ThermaSim(mesa.Model):
                 agents.Rattlesnake: {
                     "Time_Step": lambda a: a.model.step_id,
                     "Agent_ID": lambda a: a.unique_id,
+                    "Active": lambda a: a.active,
+                    "Reproductive_Agent": lambda a: a.reproductive_agent,
                     "Behavior": lambda a: a.current_behavior,
                     "Microhabitat": lambda a: a.current_microhabitat,
                     "Body_Temperature": lambda a: a.body_temperature,
@@ -139,6 +144,13 @@ class ThermaSim(mesa.Model):
     
     def get_interaction_map(self, config):
         return config['Interaction_Map']
+    
+    def bernouli_trial_hourly(self, annual_probability):
+        '''
+        Used to calculate hourly probability of survival
+        '''
+        P_H = annual_probability ** (1 / self.steps_per_year)
+        return P_H
 
     def make_landscape(self, model):
         '''
@@ -185,21 +197,94 @@ class ThermaSim(mesa.Model):
         # Compute local densities
         new_local_density = self.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
         return new_local_density
+    
+    def initiate_species_map(self):
+        """
+        Initializes a species map with class references, input parameters, 
+        and precomputed static variables, including hourly survival probabilities.
+
+        The hourly survival rate is computed from the annual survival rate using 
+        a Bernoulli process.
+        """
+        self.species_map = {
+            "KangarooRat": {
+                "class_name": agents.KangarooRat,
+                "input_parameters": self.get_krat_params(),  # Precomputed parameters
+                "static_variables": {}
+            },
+            "Rattlesnake": {
+                "class_name": agents.Rattlesnake,
+                "input_parameters": self.get_rattlesnake_params(),  # Precomputed parameters
+                "static_variables": {}
+            }
+        }
+
+        for species, values in self.species_map.items():
+            params = values["input_parameters"]
+            if "annual_survival_probability" in params:
+                hourly_survival_probability = self.bernouli_trial_hourly(
+                    annual_probability=params["annual_survival_probability"]
+                )
+            else:
+                raise ValueError(f"Missing 'annual_survival_probability' for {species}")
+            # Store precomputed values
+            values["static_variables"]["hourly_survival_probability"] = hourly_survival_probability
+
+
+    def set_static_variable(self, species, variable_name, value, overwrite=False):
+        """
+        Sets a static variable for a given species in the species map.
+
+        Args:
+            species (str): The name of the species (e.g., "Rattlesnake", "KangarooRat").
+            variable_name (str): The name of the static variable.
+            value (any): The value to assign to the static variable.
+            overwrite (bool): If False (default), prevents overwriting an existing variable.
+
+        Raises:
+            ValueError: If the species does not exist in the species map.
+        """
+        if species not in self.species_map:
+            raise ValueError(f"Species '{species}' not found in species map.")
+
+        static_vars = self.species_map[species]["static_variables"]
+
+        # Only set the variable if it doesn't exist OR if overwrite=True
+        if overwrite or variable_name not in static_vars:
+            static_vars[variable_name] = value
+
+    def get_static_variable(self, species, variable_name, default=None):
+        """
+        Retrieves a static variable for a given species in the species map.
+
+        Args:
+            species (str): The name of the species (e.g., "Rattlesnake", "KangarooRat").
+            variable_name (str): The name of the static variable to retrieve.
+            default (any, optional): A default value to return if the variable does not exist. 
+                                    Defaults to None.
+
+        Returns:
+            any: The value of the static variable if found, else the default value.
+
+        Raises:
+            ValueError: If the species does not exist in the species map.
+        """
+        if species not in self.species_map:
+            raise ValueError(f"Species '{species}' not found in species map.")
+
+        return self.species_map[species]["static_variables"].get(variable_name, default)
+
+
         
     ## Intialize populations and births
     def give_birth(self, species_name, agent_id, pos=None, parent=None, initial_pop=False):
         """
         Helper function - Adds new agents to the landscape
         """
-        species_map = {
-            "KangarooRat": (agents.KangarooRat, self.get_krat_params),
-            "Rattlesnake": (agents.Rattlesnake, self.get_rattlesnake_params)
-        }
-
-        if species_name not in species_map:
+        if species_name not in self.species_map:
             raise ValueError(f"Class for species: {species_name} does not exist")
 
-        agent_class, param_func = species_map[species_name]
+        agent_class, param_func = self.species_map[species_name]
         agent_params = param_func(config=self.config)
         if initial_pop:
             max_age = agent_params['max_age']
@@ -304,16 +389,24 @@ class ThermaSim(mesa.Model):
         for agent in dead_snakes + dead_krats:
             self.schedule.remove(agent) 
 
-    def too_many_agents_check(self):
-        total_agents = len(self.schedule.agents_by_type[agents.KangarooRat].values()) + len(self.schedule.agents_by_type[agents.Rattlesnake].values())
+    def end_sim_early_check(self):
+        snakes = len(self.schedule.agents_by_type[agents.Rattlesnake].values())
+        krats = len(self.schedule.agents_by_type[agents.KangarooRat].values())
+        total_agents = snakes + krats
         if total_agents > 20000:
-           raise RuntimeError(f"Too many agents in the simulation: {total_agents}")
+           self.running=False
+        elif krats==0:
+            self.running=False
+        elif snakes==0:
+            self.running=False
+        elif total_agents>21000:
+            raise RuntimeError('Simulation didnt stop')
 
     def step(self):
         '''
         Main model step function used to run one step of the model.
         '''
-        self.too_many_agents_check()
+        self.end_sim_early_check()
         self.remove_dead_agents()
         self.hour = self.landscape.thermal_profile['hour'].iloc[self.step_id]
         self.day = self.landscape.thermal_profile['day'].iloc[self.step_id]
