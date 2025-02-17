@@ -6,10 +6,6 @@ class EctothermBehavior(object):
     def __init__(self, snake):
         self.snake = snake
         self.model = self.snake.model
-        self.thermoregulation_module = tn.ThermalSimulator(flip_logic='preferred',
-                                                           t_pref_min=self.snake.t_pref_min,
-                                                           t_pref_max=self.snake.t_pref_max ,
-                                                           t_pref_opt=self.snake.t_opt)
 
     def thermal_accuracy_calculator(self):
         '''
@@ -26,6 +22,8 @@ class EctothermBehavior(object):
         if x>1:
             x=1
         return x
+    
+    #def do_i_flip(self, )
     
     def holling_type_2(self, prey_density, strike_success, attack_rate, handling_time):
         """
@@ -123,6 +121,17 @@ class EctothermBehavior(object):
         '''
         self.snake.current_microhabitat = 'Burrow'
         self.snake.current_behavior = 'Rest'
+
+    def preferred_topt(self, t_body, t_pref_opt, t_pref_max, t_pref_min):
+        if t_body >= t_pref_opt:
+            prob_flip = ((t_body - t_pref_opt) / (t_pref_max - t_pref_opt))
+        elif t_body < t_pref_opt:
+            prob_flip = ((t_pref_opt - t_body) / (t_pref_opt - t_pref_min))
+        else:
+            raise ValueError('Not sure why this isnt working')
+        if prob_flip > 1:
+            prob_flip = 1
+        return prob_flip
         
 
     def thermoregulate(self):
@@ -132,8 +141,9 @@ class EctothermBehavior(object):
         '''
         self.snake.current_behavior = 'Thermoregulate'
         mh = self.thermoregulation_module.do_i_flip(t_body=self.snake.body_temperature,
-                                                burrow_temp=self.snake.model.landscape.burrow_temperature,
-                                                open_temp=self.snake.model.landscape.open_temperature)
+                                                    burrow_temp=self.snake.model.landscape.burrow_temperature,
+                                                    open_temp=self.snake.model.landscape.open_temperature)
+        print(mh)
         if mh == 'In':
             self.snake.current_microhabitat = 'Burrow'
         elif mh == 'Out':

@@ -46,7 +46,7 @@ class Rattlesnake(mesa.Agent):
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
             self.max_thermal_accuracy = self.snake_config['max_thermal_accuracy'] #Replace this with an input value later
             # Birth Module
-            self.reproductive_age_steps = self.set_reproductive_age_steps(self, reproductive_age_years = self.snake_config['reproductive_age_years'])
+            self.reproductive_age_steps = self.set_reproductive_age_steps(reproductive_age_years = self.snake_config['reproductive_age_years'])
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.snake_config['birth_death_module'])
         else:
             # Initialize attributes to None or defaults

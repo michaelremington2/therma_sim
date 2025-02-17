@@ -198,6 +198,12 @@ class ThermaSim(mesa.Model):
         new_local_density = self.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
         return new_local_density
     
+    def get_rattlesnake_params(self):
+        return self.config['Rattlesnake_Parameters']
+    
+    def get_krat_params(self):
+        return self.config['KangarooRat_Parameters']
+    
     def initiate_species_map(self):
         """
         Initializes a species map with class references, input parameters, 
@@ -209,18 +215,17 @@ class ThermaSim(mesa.Model):
         self.species_map = {
             "KangarooRat": {
                 "class_name": agents.KangarooRat,
-                "input_parameters": self.get_krat_params(),  # Precomputed parameters
+                "input_parameters": self.get_krat_params,  # Precomputed parameters
                 "static_variables": {}
             },
             "Rattlesnake": {
                 "class_name": agents.Rattlesnake,
-                "input_parameters": self.get_rattlesnake_params(),  # Precomputed parameters
+                "input_parameters": self.get_rattlesnake_params,  # Precomputed parameters
                 "static_variables": {}
             }
         }
-
         for species, values in self.species_map.items():
-            params = values["input_parameters"]
+            params = values["input_parameters"]()
             if "annual_survival_probability" in params:
                 hourly_survival_probability = self.bernouli_trial_hourly(
                     annual_probability=params["annual_survival_probability"]
@@ -274,7 +279,6 @@ class ThermaSim(mesa.Model):
 
         return self.species_map[species]["static_variables"].get(variable_name, default)
 
-
         
     ## Intialize populations and births
     def give_birth(self, species_name, agent_id, pos=None, parent=None, initial_pop=False):
@@ -284,8 +288,9 @@ class ThermaSim(mesa.Model):
         if species_name not in self.species_map:
             raise ValueError(f"Class for species: {species_name} does not exist")
 
-        agent_class, param_func = self.species_map[species_name]
-        agent_params = param_func(config=self.config)
+        agent_info = self.species_map[species_name]
+        agent_params = agent_info["input_parameters"]()
+        agent_class = agent_info['class_name']
         if initial_pop:
             max_age = agent_params['max_age']
             rand_age = np.random.uniform(0,max_age*self.steps_per_year)
