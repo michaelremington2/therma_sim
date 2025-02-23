@@ -8,7 +8,8 @@ def halfway_in_range(r):
     return (r.start + r.stop - 1) / 2
 
 ## Landscape Parameters
-thermal_data_profile_fp = 'Data/Texas-Marathon_data.csv'
+thermal_data_profile_fp = 'Data/thermal_db.csv'
+
 torus = False
 moore = False
 width=32# 32 hectares to 320000 meters
@@ -79,15 +80,15 @@ input_dictionary = {
                                             "std_litter_size": 0.31,
                                             "upper_bound_litter_size": 8,
                                             "lower_bound_litter_size": 2,
-                                            "litters_per_year": 0.5,
+                                            "litters_per_year": 1,
                                             "birth_hazard_rate":1/2, # give birth every other year
-                                            "death_hazard_rate":1/18, # die once ever 18 years
+                                            "death_hazard_rate":1/15, # die once ever 15 years
                                             },
                               'moore': moore},
     'KangarooRat_Parameters':{'Body_sizes':krat_body_sizes,
                               'active_hours':krat_active_hours,
-                              'annual_survival_probability':0.55,
-                              'reproductive_age_years':1/4,
+                              'annual_survival_probability':0.50,
+                              'reproductive_age_years':1,
                               'max_age':6,
                               'birth_death_module': {
                                             "mean_litter_size": 3.5,

@@ -18,8 +18,9 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, hourly_survival_probability = 1, age=0, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None):
         super().__init__(unique_id, model)
+        self.initial_pop = initial_pop
         self.pos = initial_pos
         self.snake_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
@@ -33,6 +34,7 @@ class Rattlesnake(mesa.Agent):
                                                              X2_temp=self.snake_config['X2_temp'],
                                                              X3_const=self.snake_config['X3_const'])
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
+            self.max_age_steps = self.snake_config['max_age']*self.model.steps_per_year
             self.moore = self.snake_config['moore']
             self.brumation_months = self.snake_config['brumination_months']
             self.hourly_survival_probability = hourly_survival_probability
@@ -47,7 +49,7 @@ class Rattlesnake(mesa.Agent):
             self.max_thermal_accuracy = self.snake_config['max_thermal_accuracy'] #Replace this with an input value later
             # Birth Module
             self.reproductive_age_steps = self.set_reproductive_age_steps(reproductive_age_years = self.snake_config['reproductive_age_years'])
-            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.snake_config['birth_death_module'])
+            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.snake_config['birth_death_module'], initial_pop=self.initial_pop)
         else:
             # Initialize attributes to None or defaults
             self.metabolism = None
@@ -63,6 +65,7 @@ class Rattlesnake(mesa.Agent):
             self.t_opt = None
             self.strike_performance_opt = None
             self.birth_death_module = None
+            self.max_age = 20
 
         # Behavioral profile
         self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
@@ -81,7 +84,6 @@ class Rattlesnake(mesa.Agent):
         # Agent logisic checks
         self._active = False
         self._alive = True
-        self._reproductive_agent = False
 
 
     @property
@@ -120,6 +122,8 @@ class Rattlesnake(mesa.Agent):
     @active.setter
     def active(self, value):
         if self.model.month in self.brumation_months:
+            self._active = False
+        elif self.alive==False:
             self._active = False
         else:
             self._active = value
@@ -169,7 +173,7 @@ class Rattlesnake(mesa.Agent):
         return existing_value
 
 
-    def initiate_birth_death_module(self, birth_config):
+    def initiate_birth_death_module(self, birth_config, initial_pop):
         '''
         Helper function for setting up bith module for organisms
         '''
@@ -177,7 +181,8 @@ class Rattlesnake(mesa.Agent):
                 mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
                 upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["lower_bound_litter_size"],
                 litters_per_year=birth_config["litters_per_year"],
-                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"])
+                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"],
+                initial_pop=initial_pop)
 
     def set_mass(self, body_size_range):
         mass = np.random.uniform(min(body_size_range), max(body_size_range))
@@ -274,11 +279,7 @@ class Rattlesnake(mesa.Agent):
         '''
         self.is_starved()
         self.random_death()
-        if self.model.schedule.time % self.model.steps_per_month == 0:
-            self.age += 1
         self.activate_snake()
-        if self.reproductive_agent:
-            self.birth_death_module.step()
 
     def simulate_decision(self):
         '''
@@ -292,6 +293,8 @@ class Rattlesnake(mesa.Agent):
     def step(self):
         self.agent_checks()
         self.simulate_decision()
+        self.birth_death_module.step()
+        self.age += 1
         #self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
         #print(f'Metabolic State {self.metabolism.metabolic_state}')
         #self.print_history()
@@ -303,22 +306,25 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, age=0, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, age=0, initial_pop=False, initial_pos=None, config=None):
         super().__init__(unique_id, model)
+        self.initial_pop = initial_pop
         self.pos = initial_pos
         self.krat_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
-        self.age_steps = age
+        self.age = age
         if self.krat_config is not None:
             self.active_hours = self.krat_config['active_hours']
             self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
+            self.max_age_steps = self.krat_config['max_age']*self.model.steps_per_year
             self.moore = self.krat_config['moore']
             self.hourly_survival_probability = self.bernouli_trial_hourly(annual_probability=self.krat_config['annual_survival_probability'])
             self.reproductive_age_steps = int(self.krat_config['reproductive_age_years']*self.model.steps_per_year)
-            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'])
+            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'], initial_pop=initial_pop)
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
             self.mass = 10
+            self.max_age = 6
             self.moore = True
             self.hourly_survival_probability = 1
             self.birth_death_module = None
@@ -405,7 +411,7 @@ class KangarooRat(mesa.Agent):
         '''
         self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
 
-    def initiate_birth_death_module(self, birth_config):
+    def initiate_birth_death_module(self, birth_config, initial_pop):
         '''
         Helper function for setting up bith module for organisms
         '''
@@ -413,7 +419,8 @@ class KangarooRat(mesa.Agent):
                 mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
                 upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["lower_bound_litter_size"],
                 litters_per_year=birth_config["litters_per_year"],
-                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"])
+                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"],
+                initial_pop=initial_pop)
 
     def von_mises_move(self, current_pos):
         direction = np.random.vonmises()
@@ -422,13 +429,10 @@ class KangarooRat(mesa.Agent):
         pass
 
     def step(self):
-        hour = self.model.landscape.thermal_profile['hour'].iloc[self.model.step_id]
         self.random_death()
-        self.age_steps += 1
-        self.activate_krat(hour=hour)
-        self.check_reproductive_status()
-        if self.reproductive_agent:
-            self.birth_death_module.step()
+        self.activate_krat(hour=self.model.hour)
+        self.birth_death_module.step()
+        self.age += 1
 
 
 

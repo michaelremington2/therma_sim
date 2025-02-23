@@ -13,6 +13,7 @@ import agents
 import interaction
 import utility_softmax_lookup as usl
 import uuid
+import time
 
 warnings.filterwarnings("ignore")
 
@@ -64,7 +65,6 @@ class ThermaSim(mesa.Model):
                     "Time_Step": lambda a: a.model.step_id,
                     "Agent_ID": lambda a: a.unique_id,
                     "Active": lambda a: a.active,
-                    "Reproductive_Agent": lambda a: a.reproductive_agent,
                     "Behavior": lambda a: a.current_behavior,
                     "Microhabitat": lambda a: a.current_microhabitat,
                     "Body_Temperature": lambda a: a.body_temperature,
@@ -294,7 +294,7 @@ class ThermaSim(mesa.Model):
         if initial_pop:
             max_age = agent_params['max_age']
             rand_age = np.random.uniform(0,max_age*self.steps_per_year)
-            agent = agent_class(unique_id=agent_id, model=self, config=agent_params, age = rand_age)
+            agent = agent_class(unique_id=agent_id, model=self, config=agent_params, age = rand_age, initial_pop=initial_pop)
         else:
             agent = agent_class(unique_id=agent_id, model=self, config=agent_params)
 
@@ -395,7 +395,7 @@ class ThermaSim(mesa.Model):
             self.schedule.remove(agent) 
 
     def end_sim_early_check(self):
-        snakes = len(self.schedule.agents_by_type[agents.Rattlesnake].values())
+        snakes = self.rattlesnake_pop_size
         krats = len(self.schedule.agents_by_type[agents.KangarooRat].values())
         total_agents = snakes + krats
         if total_agents > 20000:
@@ -412,11 +412,11 @@ class ThermaSim(mesa.Model):
         Main model step function used to run one step of the model.
         '''
         self.end_sim_early_check()
-        self.remove_dead_agents()
-        self.hour = self.landscape.thermal_profile['hour'].iloc[self.step_id]
-        self.day = self.landscape.thermal_profile['day'].iloc[self.step_id]
-        self.month = self.landscape.thermal_profile['month'].iloc[self.step_id]
-        self.year = self.landscape.thermal_profile['year'].iloc[self.step_id]
+        self.hour = self.landscape.thermal_profile.select("hour").row(self.step_id)[0]
+
+        self.day = self.landscape.thermal_profile.select('day').row(self.step_id)[0]
+        self.month = self.landscape.thermal_profile.select('month').row(self.step_id)[0]
+        self.year = self.landscape.thermal_profile.select('year').row(self.step_id)[0]
         self.datacollector.collect(self)
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         # Snakes
@@ -429,7 +429,7 @@ class ThermaSim(mesa.Model):
         for krat in krat_shuffle:
             krat.step()
         krat_shuffle = self.randomize_krats()
-        
+        self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
         self.schedule.step()
 
@@ -442,7 +442,12 @@ class ThermaSim(mesa.Model):
             step_count=max_steps
 
         for i in range(step_count):
+            start_time = time.time()
             self.step()
+            end_time= time.time()
+            execution_time = end_time - start_time
+            print(f'Step {self.step_id}, snakes {self.rattlesnake_pop_size}, krats {self.krats_pop_size}, time_to_run_step {execution_time}')
+
             
 
 if __name__ ==  "__main__":
