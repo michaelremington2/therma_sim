@@ -17,6 +17,18 @@ import time
 
 warnings.filterwarnings("ignore")
 
+def get_range(range_dict):
+    """
+    Converts a dictionary representation of a range into a Python `range` object.
+
+    Example Input:
+        {"start": 60, "stop": 71, "step": 1}
+    Returns:
+        range(60, 71, 1)
+    """
+    return range(range_dict["start"], range_dict["stop"], range_dict.get("step", 1))
+
+
 class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
@@ -24,7 +36,7 @@ class ThermaSim(mesa.Model):
     def __init__(self, config, seed=42, _test=False):
         self.running = True
         self.config = config
-        self.initial_agents_dictionary = self.get_initial_population_params(config=self.config)
+        self.initial_agents_dictionary = self.get_initial_population_params()
         self.step_id = 0
         self.seed = seed
         self._hour = None
@@ -60,7 +72,7 @@ class ThermaSim(mesa.Model):
                 "Rattlesnakes": lambda m: m.schedule.get_type_count(agents.Rattlesnake),
                 "Krats": lambda m: m.schedule.get_type_count(agents.KangarooRat),
             },
-            agenttype_reporters={
+            agenttype_reporters = {
                 agents.Rattlesnake: {
                     "Time_Step": lambda a: a.model.step_id,
                     "Agent_ID": lambda a: a.unique_id,
@@ -69,6 +81,10 @@ class ThermaSim(mesa.Model):
                     "Microhabitat": lambda a: a.current_microhabitat,
                     "Body_Temperature": lambda a: a.body_temperature,
                     "Metabolic_State": lambda a: a.metabolism.metabolic_state,
+                    "Handling_Time": lambda a: a.behavior_module.handling_time,
+                    "Attack_Rate": lambda a: a.behavior_module.attack_rate,
+                    "Prey_Density": lambda a: a.behavior_module.prey_density,
+                    "Prey_Consumed": lambda a: a.behavior_module.prey_consumed,
                 },
                 # agents.KangarooRat: {
                 #     "Time_Step": lambda a: a.model.step_id,
@@ -130,20 +146,41 @@ class ThermaSim(mesa.Model):
     def get_landscape_params(self, config):
         return config['Landscape_Parameters']
 
-    def get_rattlesnake_params(self, config):
-        return config['Rattlesnake_Parameters']
-    
-    def get_krat_params(self, config):
-        return config['KangarooRat_Parameters']
+    def get_rattlesnake_params(self):
+        params = self.config['Rattlesnake_Parameters']
+        
+        # Convert stored dictionaries into Python range objects
+        if isinstance(params["Body_sizes"], dict):
+            params["Body_sizes"] = get_range(params["Body_sizes"])
+        if isinstance(params["initial_calories"], dict):
+            params["initial_calories"] = get_range(params["initial_calories"])
+
+        return params
     
     def get_interaction_params(self, config):
         return config['Interaction_Parameters']
     
-    def get_initial_population_params(self, config):
-        return config['Initial_Population_Sizes']
+    def get_initial_population_params(self):
+        pop_params = self.config['Initial_Population_Sizes']
+        
+        # Convert stored dictionaries into Python range objects
+        for species in pop_params:
+            if isinstance(pop_params[species], dict):
+                pop_params[species] = get_range(pop_params[species])
+
+        return pop_params
     
-    def get_interaction_map(self, config):
-        return config['Interaction_Map']
+    def get_interaction_map(self):
+        interaction_map = self.config['Interaction_Map']
+
+        # Convert `expected_prey_body_size` from midpoint of range
+        for predator_prey, interaction_data in interaction_map.items():
+            if isinstance(interaction_data["expected_prey_body_size"], dict):
+                prey_body_size_range = get_range(interaction_data["expected_prey_body_size"])
+                interaction_data["expected_prey_body_size"] = (prey_body_size_range.start + prey_body_size_range.stop - 1) / 2
+
+        return interaction_map
+
     
     def bernouli_trial_hourly(self, annual_probability):
         '''
@@ -166,7 +203,7 @@ class ThermaSim(mesa.Model):
         '''
         Retired: Helper function for making an interaction model between a predator and prey     
         '''
-        interaction_map = self.get_interaction_map(config=self.config)
+        interaction_map = self.get_interaction_map()
         return interaction.Interaction_Map(model = self, interaction_map=interaction_map)
 
     def logistic_population_density_function(self, global_population, total_area, carrying_capacity, growth_rate, threshold_density):
@@ -199,11 +236,20 @@ class ThermaSim(mesa.Model):
         return new_local_density
     
     def get_rattlesnake_params(self):
-        return self.config['Rattlesnake_Parameters']
+        params = self.config['Rattlesnake_Parameters']
+        if isinstance(params["Body_sizes"], dict):
+            params["Body_sizes"] = get_range(params["Body_sizes"])
+        if isinstance(params["initial_calories"], dict):
+            params["initial_calories"] = get_range(params["initial_calories"])
+        return params
+
     
     def get_krat_params(self):
-        return self.config['KangarooRat_Parameters']
-    
+        params = self.config['KangarooRat_Parameters']
+        if isinstance(params["Body_sizes"], dict):
+            params["Body_sizes"] = get_range(params["Body_sizes"])
+        return params
+
     def initiate_species_map(self):
         """
         Initializes a species map with class references, input parameters, 
@@ -303,30 +349,31 @@ class ThermaSim(mesa.Model):
         self.schedule.add(agent)
 
     def initialize_populations(self, initial_agent_dictionary, spatially_explicit=False):
-        '''
-        Helper function in the landscape class used to intialize populations.
-        Populations sizes should be a range of individuals per hectare
-        '''
+        """
+        Initializes the model's agent populations.
+        Population sizes should be a range of individuals per hectare.
+        """
         agent_id = 0
         for hect in range(self.landscape.landscape_size):
             for species, initial_population_size_range in initial_agent_dictionary.items():
+                # Ensure `initial_population_size_range` is a range object
+                if isinstance(initial_population_size_range, dict):
+                    initial_population_size_range = get_range(initial_population_size_range)
+
                 start, stop = initial_population_size_range.start, initial_population_size_range.stop
                 initial_pop_size = round(np.random.uniform(start, stop))
-                # Need to scale population size by hectare
-                for i in range(initial_pop_size):
+
+                # Scale population size by hectare
+                for _ in range(initial_pop_size):
                     if spatially_explicit:
-                        # Code for future models. Not working right now.
-                        x_hect = 0 
-                        y_hect = 0
-                        x = np.random.uniform(x_hect, x_hect + self.hectare_to_meter)
-                        y = np.random.uniform(y_hect, y_hect + self.hectare_to_meter)
-                        pos = (x,y)
-                        self.give_birth(species_name=species, pos=pos, initial_pop=True)
+                        pos = (np.random.uniform(0, self.landscape.width), np.random.uniform(0, self.landscape.height))
+                        self.give_birth(species_name=species, pos=pos, initial_pop=True, agent_id=agent_id)
                     else:
                         self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
-                    agent_id +=1
-                    self.next_agent_id = agent_id+1
-                #print(pos,agent_id)
+                    
+                    agent_id += 1
+                    self.next_agent_id = agent_id + 1
+                    #print(pos,agent_id)
                                     
 
     def randomize_snakes(self):

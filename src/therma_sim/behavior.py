@@ -10,6 +10,52 @@ class EctothermBehavior(object):
                                                            t_pref_min=self.snake.t_pref_min,
                                                            t_pref_max=self.snake.t_pref_max ,
                                                            t_pref_opt=self.snake.t_opt)
+        self._log_prey_density = 0  
+        self._log_attack_rate = 0  
+        self._log_handling_time = 0  
+        self._log_prey_consumed = 0
+    
+    @property
+    def prey_density(self):
+        """Tracks prey density for bookkeeping purposes."""
+        return self._log_prey_density
+
+    @prey_density.setter
+    def prey_density(self, value):
+        self._log_prey_density = value
+
+    @property
+    def attack_rate(self):
+        """Tracks attack rate for bookkeeping purposes."""
+        return self._log_attack_rate
+
+    @attack_rate.setter
+    def attack_rate(self, value):
+        self._log_attack_rate = value
+
+    @property
+    def handling_time(self):
+        """Tracks handling time for bookkeeping purposes."""
+        return self._log_handling_time
+
+    @handling_time.setter
+    def handling_time(self, value):
+        self._log_handling_time = value
+
+    @property
+    def prey_consumed(self):
+        """Tracks number of prey consumed for bookkeeping purposes."""
+        return self._log_prey_consumed
+
+    @prey_consumed.setter
+    def prey_consumed(self, value):
+        self._log_prey_consumed = value
+
+    def reset_log_metrics(self):
+        self.handling_time = 0
+        self.attack_rate = 0
+        self.prey_density = 0
+        self.prey_consumed = 0
 
     def thermal_accuracy_calculator(self):
         '''
@@ -83,18 +129,22 @@ class EctothermBehavior(object):
         prey_density_range = self.model.initial_agents_dictionary[prey_label]
         active_prey_population_size = self.model.active_krats_count
         prey_density = self.model.calc_local_population_density(population_size = active_prey_population_size, middle_range=prey_density_range.start, max_density=prey_density_range.stop)
+        self.prey_density = prey_density
         # attack rate
         attack_range = self.model.interaction_map.get_attack_rate_range(predator=predator_label, prey=prey_label)
         attack_rate = np.random.uniform(attack_range['min'], attack_range['max'])
+        self.attack_rate = attack_rate
         # Handling time
         handling_time_range = self.model.interaction_map.get_handling_time_range(predator=predator_label, prey=prey_label)
         handling_time = np.random.uniform(handling_time_range['min'], handling_time_range['max'])
+        self.handling_time = handling_time
         #Expected_prey
         expected_prey_consumed = self.holling_type_2(prey_density=prey_density,
                                                      strike_success=self.snake.strike_performance_opt,
                                                      attack_rate=attack_rate, 
                                                      handling_time=handling_time)
         prey_consumed = np.random.poisson(expected_prey_consumed)
+        self.prey_consumed = prey_consumed
         if prey_consumed > 0 and active_prey_population_size>0:
                 for i in range(prey_consumed):
                     # Get krat
@@ -152,6 +202,7 @@ class EctothermBehavior(object):
         - Thermoregulate
         - Forage
         """
+        self.reset_log_metrics()
         behavior = self.choose_behavior()
         behavior_actions = {
             'Rest': self.rest,

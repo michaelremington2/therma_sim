@@ -17,6 +17,10 @@ class Interaction_Map(object):
     def __init__(self, model, interaction_map):
         self.model = model  
         self.interaction_map = interaction_map 
+
+        self.interaction_map = {
+            tuple(key.split("-")): value for key, value in interaction_map.items()
+        }
     
     def get_interaction_parameters(self, predator, prey):
         """
