@@ -493,7 +493,7 @@ class ThermaSim(mesa.Model):
             self.step()
             end_time= time.time()
             execution_time = end_time - start_time
-            print(f'Step {self.step_id}, snakes {self.rattlesnake_pop_size}, krats {self.krats_pop_size}, time_to_run_step {execution_time}')
+            #print(f'Step {self.step_id}, snakes {self.rattlesnake_pop_size}, krats {self.krats_pop_size}, time_to_run_step {execution_time}')
 
             
 
