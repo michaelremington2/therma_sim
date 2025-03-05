@@ -1,6 +1,6 @@
 {
     "Landscape_Parameters": {
-        "Thermal_Database_fp": "Data/thermal_db.csv",
+        "Thermal_Database_fp": "Data/Canada_data_6_years.csv",
         "Width": 32,
         "Height": 32,
         "torus": false,
@@ -43,7 +43,7 @@
     "KangarooRat_Parameters": {
         "Body_sizes": {"start": 60, "stop": 71, "step": 1},
         "active_hours": [20, 21, 22, 23, 24, 0, 1, 2, 3, 4, 5, 6],
-        "annual_survival_probability": 0.5,
+        "annual_survival_probability": 0.65,
         "reproductive_age_years": 1,
         "max_age": 6,
         "birth_death_module": {

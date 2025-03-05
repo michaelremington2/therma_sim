@@ -183,6 +183,24 @@ class Rattlesnake(mesa.Agent):
                 litters_per_year=birth_config["litters_per_year"],
                 birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"],
                 initial_pop=initial_pop)
+    
+    def report_data(self):
+        """
+        Extracts rattlesnake-specific data into a list for CSV logging.
+        """
+        return [
+            self.model.step_id,
+            self.unique_id,
+            self.active,
+            self.current_behavior,
+            self.current_microhabitat,
+            self.body_temperature,
+            self.metabolism.metabolic_state,
+            self.behavior_module.handling_time,
+            self.behavior_module.attack_rate,
+            self.behavior_module.prey_density,
+            self.behavior_module.prey_consumed
+        ]
 
     def set_mass(self, body_size_range):
         mass = np.random.uniform(min(body_size_range), max(body_size_range))
@@ -371,6 +389,16 @@ class KangarooRat(mesa.Agent):
     @reproductive_agent.setter
     def reproductive_agent(self, value):
         self._reproductive_agent = value  # Ensure manual setting works
+
+    def report_data(self):
+        """
+        Extracts kangaroo rat-specific data into a list for CSV logging.
+        """
+        return [
+            self.model.step_id,
+            self.unique_id,
+            self.active
+        ]
 
     def check_reproductive_status(self):
         """

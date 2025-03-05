@@ -27,13 +27,13 @@ def main():
     model = ThermaSim(config=config, seed=args.seed)
     model.run_model()
 
-    # Collect results
-    model_data = model.datacollector.get_model_vars_dataframe()
-    rattlesnake_data = model.datacollector.get_agenttype_vars_dataframe(agents.Rattlesnake)
+    # # Collect results
+    # model_data = model.datacollector.get_model_vars_dataframe()
+    # rattlesnake_data = model.datacollector.get_agenttype_vars_dataframe(agents.Rattlesnake)
 
-    # Save outputs to the designated folder
-    model_data.to_csv(os.path.join(args.output, "model_data.csv"), index=False)
-    rattlesnake_data.to_csv(os.path.join(args.output, "agent_data.csv"), index=False)
+    # # Save outputs to the designated folder
+    # model_data.to_csv(os.path.join(args.output, "model_data.csv"), index=False)
+    # rattlesnake_data.to_csv(os.path.join(args.output, "agent_data.csv"), index=False)
 
     run_time = time.time() - start_time
     print(f"Model run completed in {run_time:.2f} seconds. Results saved to {args.output}")
