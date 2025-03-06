@@ -24,7 +24,7 @@ def main():
 
     # Run the model
     start_time = time.time()
-    model = ThermaSim(config=config, seed=args.seed)
+    model = ThermaSim(config=config, seed=args.seed, output_folder=args.output)
     model.run_model()
 
     # # Collect results

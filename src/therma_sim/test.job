@@ -9,4 +9,4 @@
 #source /home/mremington/anaconda3/etc/profile.d/conda.sh
 #conda activate therma_sim
 
-python run_model.py --config sim_config.json --seed 42 --output Output_Data/
+python run_model.py --config sim_config.json --seed 42 --output Results/

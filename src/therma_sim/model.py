@@ -34,7 +34,7 @@ class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
-    def __init__(self, config, seed=42, _test=False):
+    def __init__(self, config, seed=42, _test=False, output_folder=None):
         self.running = True
         self.config = config
         self.initial_agents_dictionary = self.get_initial_population_params()
@@ -47,6 +47,8 @@ class ThermaSim(mesa.Model):
         self.next_agent_id = 0
         if seed is not None:
             np.random.seed(self.seed)
+        self.output_folder = output_folder or ''
+        
         
         # Schedular 
         # Random activation, random by type Simultanious, staged
@@ -163,21 +165,21 @@ class ThermaSim(mesa.Model):
         Initiate logger_data_bases
         '''
         rattlesnake_columns = [
-            "Step_ID", "Agent_id", "Active", "Behavior", "Microhabitat",
+            "Time_Step", "Agent_id", "Active", "Behavior", "Microhabitat",
             "Body_Temperature", "Metabolic_State", "Handling_Time",
             "Attack_Rate", "Prey_Density", "Prey_Consumed"
         ]
         kangaroo_rat_columns = [
-            "Step_ID", "Agent_id", "Active"
+            "Time_Step", "Agent_id", "Active"
         ]
         model_columns = [
-            "Step_ID", "Hour", "Day", "Month", "Year",
+            "Time_Step", "Hour", "Day", "Month", "Year",
             "Rattlesnakes", "Krats"
         ]
         self.logger = dl.DataLogger()
-        self.logger.make_data_reporter("Output_Data/Rattlesnake.csv", column_names = rattlesnake_columns)
-        self.logger.make_data_reporter("Output_Data/KangarooRat.csv", column_names=kangaroo_rat_columns)
-        self.logger.make_data_reporter("Output_Data/Model.csv", column_names=model_columns)
+        self.logger.make_data_reporter(file_name=self.output_folder+"Rattlesnake.csv", column_names = rattlesnake_columns)
+        self.logger.make_data_reporter(file_name=self.output_folder+"KangarooRat.csv", column_names=kangaroo_rat_columns)
+        self.logger.make_data_reporter(file_name=self.output_folder+"Model.csv", column_names=model_columns)
 
     def report_data(self):
         """
@@ -470,17 +472,17 @@ class ThermaSim(mesa.Model):
         self.month = self.landscape.thermal_profile.select('month').row(self.step_id)[0]
         self.year = self.landscape.thermal_profile.select('year').row(self.step_id)[0]
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
-        self.logger.log_data(file_name = "Output_Data/Model.csv", data=self.report_data())
+        self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
         # Snakes
         snake_shuffle = self.randomize_snakes()
         for snake in snake_shuffle:
-            self.logger.log_data(file_name = "Output_Data/Rattlesnake.csv", data=snake.report_data())
+            self.logger.log_data(file_name = self.output_folder+"Rattlesnake.csv", data=snake.report_data())
             snake.step()
         snake_shuffle = self.randomize_snakes()
         # Krats
         krat_shuffle = self.randomize_krats()
         for krat in krat_shuffle:
-            self.logger.log_data(file_name = "Output_Data/KangarooRat.csv", data=krat.report_data())
+            self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
             krat.step()
         krat_shuffle = self.randomize_krats()
         
