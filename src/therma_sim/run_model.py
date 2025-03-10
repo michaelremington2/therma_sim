@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--steps", type=int, default=None, help="Number of steps to run the model (optional).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
     parser.add_argument("--output", type=str, default="", help="Directory to save output files.")
+    parser.add_argument("--sim_id", type=str, default="", help="ID label for simulation.")
 
     args = parser.parse_args()
 
@@ -24,7 +25,7 @@ def main():
 
     # Run the model
     start_time = time.time()
-    model = ThermaSim(config=config, seed=args.seed, output_folder=args.output)
+    model = ThermaSim(config=config, seed=args.seed, output_folder=args.output, sim_id=args.sim_id)
     model.run_model()
 
     # # Collect results
