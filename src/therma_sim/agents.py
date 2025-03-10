@@ -73,8 +73,8 @@ class Rattlesnake(mesa.Agent):
         self._current_behavior = ''
         self.behavior_history = []
         self.activity_coefficients = {'Rest':1,
-                                      'Thermoregulate':1,
-                                      'Forage':1.5}
+                                      'Thermoregulate':2,
+                                      'Forage':2}
 
         # Microhabitat
         self._current_microhabitat = ''
@@ -190,8 +190,13 @@ class Rattlesnake(mesa.Agent):
         """
         return [
             self.model.step_id,
+            self.model.hour,
+            self.model.day,
+            self.model.month,
+            self.model.year,
             self.unique_id,
             self.active,
+            self.alive,
             self.current_behavior,
             self.current_microhabitat,
             self.body_temperature,
@@ -213,7 +218,7 @@ class Rattlesnake(mesa.Agent):
         self.pos = (x, y)
     
     def activate_snake(self):
-        if self.current_microhabitat != 'Burrow':
+        if self.current_behavior in ['Thermoregulate', 'Forage']:
             self.active = True
         else:
             self.active = False
@@ -271,15 +276,15 @@ class Rattlesnake(mesa.Agent):
         '''
         self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
 
-    def check_reproductive_status(self):
-        """
-        This function checks if a rattlesnake is reproductive based on age and sex.
-        It should be called inside `agent_checks()`.
-        """
-        if self.sex == 'Female' and self.age >= self.reproductive_age_steps:
-            self._reproductive_agent = True  
-        else:
-            self._reproductive_agent = False 
+    # def check_reproductive_status(self):
+    #     """
+    #     This function checks if a rattlesnake is reproductive based on age and sex.
+    #     It should be called inside `agent_checks()`.
+    #     """
+    #     if self.sex == 'Female' and self.age >= self.reproductive_age_steps:
+    #         self._reproductive_agent = True  
+    #     else:
+    #         self._reproductive_agent = False 
     
     def is_starved(self):
         '''
@@ -293,7 +298,7 @@ class Rattlesnake(mesa.Agent):
 
     def agent_checks(self):
         '''
-        Helper function run in the step function to run all functions that are binary checks of the individual to manage its state of being active, alive, or giving birth.
+        Helper function run in the step function to run all functions t hat are binary checks of the individual to manage its state of being active, alive, or giving birth.
         '''
         self.is_starved()
         self.random_death()
@@ -305,8 +310,8 @@ class Rattlesnake(mesa.Agent):
         '''
         self.behavior_module.step()
         t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
-        self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coeffcient=self.activity_coefficients[self.current_behavior])
         self.update_body_temp(t_env)
+        self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coefficient=self.activity_coefficients[self.current_behavior])
 
     def step(self):
         self.agent_checks()
@@ -338,7 +343,7 @@ class KangarooRat(mesa.Agent):
             self.moore = self.krat_config['moore']
             self.hourly_survival_probability = self.bernouli_trial_hourly(annual_probability=self.krat_config['annual_survival_probability'])
             self.reproductive_age_steps = int(self.krat_config['reproductive_age_years']*self.model.steps_per_year)
-            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'], initial_pop=initial_pop)
+            self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'], initial_pop=self.initial_pop)
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
             self.mass = 10
@@ -396,7 +401,12 @@ class KangarooRat(mesa.Agent):
         """
         return [
             self.model.step_id,
+            self.model.hour,
+            self.model.day,
+            self.model.month,
+            self.model.year,
             self.unique_id,
+            self.alive,
             self.active
         ]
 

@@ -15,6 +15,7 @@ import utility_softmax_lookup as usl
 import uuid
 import time
 import data_logger as dl
+from numba import njit
 
 warnings.filterwarnings("ignore")
 
@@ -34,12 +35,14 @@ class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
-    def __init__(self, config, seed=42, _test=False, output_folder=None):
+    def __init__(self, config, seed=42, _test=False, output_folder=None,sim_id=None):
         self.running = True
         self.config = config
         self.initial_agents_dictionary = self.get_initial_population_params()
         self.step_id = 0
         self.seed = seed
+        self.sim_id = sim_id
+
         self._hour = None
         self._day = None
         self._month = None
@@ -111,7 +114,7 @@ class ThermaSim(mesa.Model):
     
     @property
     def active_krats_count(self):
-        active_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if krat.active]
+        active_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if krat.active and krat.alive]
         return len(active_krats)
 
     def get_landscape_params(self, config):
@@ -152,12 +155,13 @@ class ThermaSim(mesa.Model):
 
         return interaction_map
 
-    
-    def bernouli_trial_hourly(self, annual_probability):
+    @staticmethod
+    @njit
+    def bernouli_trial_hourly(annual_probability, steps_per_year):
         '''
         Used to calculate hourly probability of survival
         '''
-        P_H = annual_probability ** (1 / self.steps_per_year)
+        P_H = annual_probability ** (1 / steps_per_year)
         return P_H
     
     def make_data_loggers(self):
@@ -165,35 +169,48 @@ class ThermaSim(mesa.Model):
         Initiate logger_data_bases
         '''
         rattlesnake_columns = [
-            "Time_Step", "Agent_id", "Active", "Behavior", "Microhabitat",
+            "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active", "Behavior", "Microhabitat",
             "Body_Temperature", "Metabolic_State", "Handling_Time",
             "Attack_Rate", "Prey_Density", "Prey_Consumed"
         ]
         kangaroo_rat_columns = [
-            "Time_Step", "Agent_id", "Active"
+            "Time_Step", "Hour", "Day", "Month", "Year","Agent_id", "Active"
         ]
         model_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year",
-            "Rattlesnakes", "Krats"
+            "Rattlesnakes", "Krats", 'seed', 'sim_id'
+        ]
+        birth_death_columns = [
+        "Time_Step", "Agent_id","Species", "Age", "Sex", "Birth_Counter",
+        "Death_Counter", "Alive", "Event_Type", "Litter_Size"
         ]
         self.logger = dl.DataLogger()
         self.logger.make_data_reporter(file_name=self.output_folder+"Rattlesnake.csv", column_names = rattlesnake_columns)
         self.logger.make_data_reporter(file_name=self.output_folder+"KangarooRat.csv", column_names=kangaroo_rat_columns)
         self.logger.make_data_reporter(file_name=self.output_folder+"Model.csv", column_names=model_columns)
+        self.logger.make_data_reporter(file_name=self.output_folder+"BirthDeath.csv", column_names=birth_death_columns)
 
     def report_data(self):
         """
         Extracts model-level data into a list for CSV logging.
+        Includes seed and sim-ID only on the first step.
         """
-        return [
+        data = [
             self.step_id,
             self.hour,
             self.day,
             self.month,
             self.year,
             self.rattlesnake_pop_size,  # Number of rattlesnakes
-            self.krats_pop_size   # Number of kangaroo rats
+            self.krats_pop_size         # Number of kangaroo rats
         ]
+        
+        # Only include seed and sim-ID on the first step
+        if self.step_id == 0:
+            return data + [self.seed, self.sim_id]
+        else:
+            return data + [None, None]  # Use None to maintain column alignment
+
 
 
     def make_landscape(self, model):
@@ -213,7 +230,9 @@ class ThermaSim(mesa.Model):
         interaction_map = self.get_interaction_map()
         return interaction.Interaction_Map(model = self, interaction_map=interaction_map)
 
-    def logistic_population_density_function(self, global_population, total_area, carrying_capacity, growth_rate, threshold_density):
+    @staticmethod
+    @njit
+    def logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density):
         """
         Computes local density based on global population using logistic scaling.
 
@@ -234,12 +253,13 @@ class ThermaSim(mesa.Model):
     def calc_local_population_density(self, population_size, middle_range, max_density):
         # Define parameters
         total_area = self.landscape.landscape_size
-        carrying_capacity = max_density  # max density per hectare
+        expected_pop_size = population_size/total_area #Average individuals per hectare
+        carrying_capacity = min(max_density,population_size) 
         growth_rate = 1  # scaling sensitivity
-        threshold_density = middle_range  # middle of the range
+        threshold_density = min(middle_range,expected_pop_size)  # middle of the range
         global_population = population_size 
         # Compute local densities
-        new_local_density = self.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
+        new_local_density = ThermaSim.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
         return new_local_density
     
     def get_rattlesnake_params(self):
@@ -249,7 +269,6 @@ class ThermaSim(mesa.Model):
         if isinstance(params["initial_calories"], dict):
             params["initial_calories"] = get_range(params["initial_calories"])
         return params
-
     
     def get_krat_params(self):
         params = self.config['KangarooRat_Parameters']
@@ -280,8 +299,9 @@ class ThermaSim(mesa.Model):
         for species, values in self.species_map.items():
             params = values["input_parameters"]()
             if "annual_survival_probability" in params:
-                hourly_survival_probability = self.bernouli_trial_hourly(
-                    annual_probability=params["annual_survival_probability"]
+                hourly_survival_probability = ThermaSim.bernouli_trial_hourly(
+                    annual_probability=params["annual_survival_probability"],
+                    steps_per_year=self.steps_per_year
                 )
             else:
                 raise ValueError(f"Missing 'annual_survival_probability' for {species}")
@@ -346,10 +366,10 @@ class ThermaSim(mesa.Model):
         agent_class = agent_info['class_name']
         if initial_pop:
             max_age = agent_params['max_age']
-            rand_age = np.random.uniform(0,max_age*self.steps_per_year)
+            rand_age = int(np.random.uniform(0,max_age*self.steps_per_year))
             agent = agent_class(unique_id=agent_id, model=self, config=agent_params, age = rand_age, initial_pop=initial_pop)
         else:
-            agent = agent_class(unique_id=agent_id, model=self, config=agent_params)
+            agent = agent_class(unique_id=agent_id, model=self, age =0, config=agent_params)
 
         if pos is not None:
             self.place_agent(agent, pos)
@@ -443,10 +463,11 @@ class ThermaSim(mesa.Model):
         self.schedule.remove(agent)
 
     def remove_dead_agents(self):
-        dead_snakes = [snake for snake in self.schedule.agents_by_type[agents.Rattlesnake].values() if not snake.alive]
-        dead_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if not krat.alive]
-        for agent in dead_snakes + dead_krats:
-            self.schedule.remove(agent) 
+        """Removes dead agents efficiently."""
+        for agent in list(self.schedule.agents_by_type[agents.Rattlesnake].values()) + \
+                      list(self.schedule.agents_by_type[agents.KangarooRat].values()):
+            if not agent.alive:
+                self.remove_agent(agent)
 
     def end_sim_early_check(self):
         snakes = self.rattlesnake_pop_size
@@ -504,7 +525,7 @@ class ThermaSim(mesa.Model):
             self.step()
             end_time= time.time()
             execution_time = end_time - start_time
-            #print(f'Step {self.step_id}, snakes {self.rattlesnake_pop_size}, krats {self.krats_pop_size}, time_to_run_step {execution_time}')
+            print(f'Step {self.step_id}, snakes {self.rattlesnake_pop_size}, krats {self.krats_pop_size}, time_to_run_step {execution_time}')
 
             
 

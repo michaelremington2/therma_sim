@@ -1,6 +1,8 @@
 {
     "Landscape_Parameters": {
         "Thermal_Database_fp": "Data/Canada_data_6_years.csv",
+        "ENV_Temperature_Cols": {"Open":"Open_mean_Temperature",
+                                 "Burrow":"Burrow_mean_Temperature"},
         "Width": 32,
         "Height": 32,
         "torus": false,
@@ -14,7 +16,7 @@
         "Body_sizes": {"start": 370, "stop": 791, "step": 1},
         "Initial_Body_Temperature": 25,
         "initial_calories": {"start": 300, "stop": 601, "step": 1},
-        "max_meals": 6,
+        "max_meals": 5,
         "reproductive_age_years": 2,
         "max_age": 20,
         "max_thermal_accuracy": 5,
@@ -27,14 +29,14 @@
         "X1_mass": 0.930,
         "X2_temp": 0.044,
         "X3_const": -2.58,
-        "annual_survival_probability": 0.9,
+        "annual_survival_probability": 0.85,
         "brumination_months": [10, 11, 12, 1, 2, 3, 4],
         "birth_death_module": {
             "mean_litter_size": 4.6,
             "std_litter_size": 0.31,
             "upper_bound_litter_size": 8,
             "lower_bound_litter_size": 2,
-            "litters_per_year": 1,
+            "litters_per_year": 0.5,
             "birth_hazard_rate": 0.5,
             "death_hazard_rate": 0.0667
         },
@@ -68,8 +70,8 @@
                 "max": 3.0
             },
             "attack_rate_range": {
-                "min": 0,
-                "max": 0.3
+                "min": 0.1,
+                "max": 0.1
             }
         }
     }

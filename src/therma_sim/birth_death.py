@@ -46,8 +46,6 @@ class Birth_Death_Module(object):
             self.b = (self.upper_bound_litter_size - self.mean_litter_size) / self.std_litter_size
         else:
             self.birth_counter = np.inf
-
-
     
     def bounded_exponential_wait_time(self,hazard_rate, steps_per_year, min_steps, max_steps):
         """
@@ -66,9 +64,7 @@ class Birth_Death_Module(object):
             return np.inf  # No event occurs if hazard rate is zero or negative
 
         wait_time = int(np.random.exponential(scale=1 / hazard_rate) * steps_per_year)
-        
-        # Ensure the wait time stays within a reasonable range
-        return min(max(wait_time, min_steps), max_steps)
+        return np.clip(wait_time, min_steps, max_steps)
 
 
     def litter_size(self):
@@ -76,6 +72,23 @@ class Birth_Death_Module(object):
         Helper function for calculating litter size using a truncated normal distribution.
         '''
         return int(truncnorm.rvs(self.a, self.b, loc=self.mean_litter_size, scale=self.std_litter_size, size=1)[0])
+    
+    def report_data(self, event_type, litter_size=0):
+        """
+        Extracts model-level data into a list for CSV logging.
+        """
+        return [
+            self.model.step_id,
+            self.agent.unique_id,
+            self.agent.species_name, 
+            self.agent.age,
+            self.agent.sex,
+            self.birth_counter,
+            self.death_counter,
+            self.agent.alive,
+            event_type,
+            litter_size
+        ]
 
     def step(self):
         """
@@ -83,24 +96,26 @@ class Birth_Death_Module(object):
         Optimized: If the agent will die before reproducing, we only decrement the death counter.
         """
         # If the agent is expected to die before it reproduces, ignore birth updates
-        if self.death_counter <= self.birth_counter:
-            if self.death_counter <= 0:
-                self.agent.alive = False
-                return  # Stop processing if the agent dies
-            return  # Skip birth updates
-        else:
-            # Process birth event if the agent is still alive
-            if self.agent.sex == 'Female' and self.birth_counter <= 0:
-                litter_size = self.litter_size()
-                species = self.agent.species_name
-                for _ in range(litter_size):
-                    self.model.give_birth(species_name=species, agent_id=self.model.next_agent_id)
-                    self.model.next_agent_id += 1 
-                self.birth_counter = self.bounded_exponential_wait_time(hazard_rate=self.hazard_rate_birth, 
-                                                                    steps_per_year=self.model.steps_per_year,
-                                                                    min_steps = self.agent.reproductive_age_steps,
-                                                                    max_steps = self.agent.max_age_steps
-                                                                    )
+        if self.death_counter <= 0:
+            self.agent.alive = False
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
+            return  # Stop processing if the agent dies
+
+        # If birth happens before death, process birth
+        if self.agent.sex == 'Female' and self.birth_counter <= 0:
+            litter_size = self.litter_size()
+            species = self.agent.species_name
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Birth', litter_size=litter_size))
+            for _ in range(litter_size):
+                self.model.give_birth(species_name=species, agent_id=self.model.next_agent_id)
+                self.model.next_agent_id += 1
+
+            self.birth_counter = self.bounded_exponential_wait_time(
+                hazard_rate=self.hazard_rate_birth, 
+                steps_per_year=self.model.steps_per_year,
+                min_steps=self.agent.reproductive_age_steps,
+                max_steps=self.agent.max_age_steps
+            )
         self.birth_counter -= 1
         self.death_counter -= 1
 
