@@ -17,12 +17,11 @@ class Birth_Death_Module(object):
                                                         steps_per_year=self.model.steps_per_year,
                                                         min_steps = 0,
                                                         max_steps = self.agent.max_age_steps)
-
         # Death parameters
         if initial_pop and self.agent.age < self.death_counter:
             self.death_counter = self.death_counter - self.agent.age
-
         # Birth parameters
+        self.birth_counter = np.inf
         if self.agent.sex=='Female':
             self.mean_litter_size = mean_litter_size
             self.std_litter_size = std_litter_size
@@ -31,23 +30,16 @@ class Birth_Death_Module(object):
             self.litters_per_year = litters_per_year
             # Compute hazard rates
             self.hazard_rate_birth = birth_hazard_rate
-            # Initialize countdown timers (sample from exponential distribution)
-            self.birth_counter = self.bounded_exponential_wait_time(hazard_rate=self.hazard_rate_birth, 
-                                                    steps_per_year=self.model.steps_per_year,
-                                                    min_steps = self.agent.reproductive_age_steps,
-                                                    max_steps = self.agent.max_age_steps
-                                                    )
-            if initial_pop and self.agent.age < self.birth_counter:
-                self.birth_counter = self.birth_counter - self.agent.age
-            # if initial_pop and self.agent.age < self.birth_counter:
-            #     self.birth_counter = self.birth_counter - self.agent.age
             ## Hidden variables for litter size distribution
             self.a = (self.lower_bound_litter_size - self.mean_litter_size) / self.std_litter_size
             self.b = (self.upper_bound_litter_size - self.mean_litter_size) / self.std_litter_size
-        else:
-            self.birth_counter = np.inf
+            self.birth_counter = self.bounded_exponential_wait_time(
+                hazard_rate=self.hazard_rate_birth, 
+                steps_per_year=self.model.steps_per_year,
+                min_steps=self.agent.reproductive_age_steps
+            )
     
-    def bounded_exponential_wait_time(self,hazard_rate, steps_per_year, min_steps, max_steps):
+    def bounded_exponential_wait_time(self, hazard_rate, steps_per_year, min_steps, max_steps=None):
         """
         Samples a waiting time from an exponential distribution but ensures it falls within a reasonable range.
 
@@ -63,8 +55,13 @@ class Birth_Death_Module(object):
         if hazard_rate <= 0:
             return np.inf  # No event occurs if hazard rate is zero or negative
 
-        wait_time = int(np.random.exponential(scale=1 / hazard_rate) * steps_per_year)
-        return np.clip(wait_time, min_steps, max_steps)
+        # Sample from exponential and shift the minimum before applying bounds
+        raw_wait_time = np.random.exponential(scale=1 / hazard_rate) * steps_per_year
+        shifted_wait_time = min_steps + raw_wait_time  # Ensures a minimum wait time
+        if max_steps:
+            return int(np.clip(shifted_wait_time, min_steps, max_steps))
+        else:
+            return int(shifted_wait_time)
 
 
     def litter_size(self):
@@ -109,12 +106,11 @@ class Birth_Death_Module(object):
             for _ in range(litter_size):
                 self.model.give_birth(species_name=species, agent_id=self.model.next_agent_id)
                 self.model.next_agent_id += 1
-
+            # Reset Birth Counter
             self.birth_counter = self.bounded_exponential_wait_time(
                 hazard_rate=self.hazard_rate_birth, 
                 steps_per_year=self.model.steps_per_year,
-                min_steps=self.agent.reproductive_age_steps,
-                max_steps=self.agent.max_age_steps
+                min_steps=self.agent.reproductive_age_steps
             )
         self.birth_counter -= 1
         self.death_counter -= 1

@@ -369,7 +369,7 @@ class ThermaSim(mesa.Model):
             rand_age = int(np.random.uniform(0,max_age*self.steps_per_year))
             agent = agent_class(unique_id=agent_id, model=self, config=agent_params, age = rand_age, initial_pop=initial_pop)
         else:
-            agent = agent_class(unique_id=agent_id, model=self, age =0, config=agent_params)
+            agent = agent_class(unique_id=agent_id, model=self, age=0, config=agent_params)
 
         if pos is not None:
             self.place_agent(agent, pos)

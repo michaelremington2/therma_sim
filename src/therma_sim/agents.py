@@ -137,15 +137,7 @@ class Rattlesnake(mesa.Agent):
         self._alive = value
         if value==False:
             self.active=False
-
-    @property
-    def reproductive_agent(self):
-        return self._reproductive_agent
-
-    @reproductive_agent.setter
-    def reproductive_agent(self, value):
-        self._reproductive_agent = value  # Ensure manual setting works
-
+            
     @property
     def pos(self):
         return self._pos
