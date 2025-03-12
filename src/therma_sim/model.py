@@ -503,7 +503,7 @@ class ThermaSim(mesa.Model):
         # Krats
         krat_shuffle = self.randomize_krats()
         for krat in krat_shuffle:
-            self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
+            #self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
             krat.step()
         krat_shuffle = self.randomize_krats()
         
