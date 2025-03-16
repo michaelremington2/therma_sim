@@ -80,6 +80,7 @@ class Birth_Death_Module(object):
             self.agent.species_name, 
             self.agent.age,
             self.agent.sex,
+            self.agent.mass, 
             self.birth_counter,
             self.death_counter,
             self.agent.alive,

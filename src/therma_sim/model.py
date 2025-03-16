@@ -207,7 +207,7 @@ class ThermaSim(mesa.Model):
             "Rattlesnakes", "Krats", 'seed', 'sim_id'
         ]
         birth_death_columns = [
-        "Time_Step", "Agent_id","Species", "Age", "Sex", "Birth_Counter",
+        "Time_Step", "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
         "Death_Counter", "Alive", "Event_Type", "Cause_Of_Death", "Litter_Size"
         ]
         self.logger = dl.DataLogger()

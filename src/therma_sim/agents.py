@@ -425,7 +425,7 @@ class KangarooRat(mesa.Agent):
             self.model.day,
             self.model.month,
             self.model.year,
-            self.unique_id,
+            self.unique_id, 
             self.alive,
             self.active
         ]
