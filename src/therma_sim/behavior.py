@@ -12,7 +12,8 @@ class EctothermBehavior(object):
                                                            t_pref_opt=self.snake.t_opt)
         self._log_prey_density = 0  
         self._log_attack_rate = 0  
-        self._log_handling_time = 0  
+        self._log_handling_time = 0 
+        self._log_prey_encountered = 0 
         self._log_prey_consumed = 0
     
     @property
@@ -40,6 +41,14 @@ class EctothermBehavior(object):
         self._log_handling_time = value
 
     @property
+    def prey_encountered(self):
+        return self._log_prey_encountered
+
+    @prey_encountered.setter
+    def prey_encountered(self, value):
+        self._log_prey_encountered = value
+
+    @property
     def prey_consumed(self):
         return self._log_prey_consumed
 
@@ -51,6 +60,7 @@ class EctothermBehavior(object):
         self.handling_time = 0
         self.attack_rate = 0
         self.prey_density = 0
+        self.prey_encountered = 0
         self.prey_consumed = 0
 
     def thermal_accuracy_calculator(self):
@@ -69,19 +79,23 @@ class EctothermBehavior(object):
 
     @staticmethod
     @njit
-    def holling_type_2(prey_density, strike_success, attack_rate, handling_time):
+    def holling_type_2(prey_density, attack_rate, handling_time, strike_success=1):
         """
         Computes the Holling Type II functional response.
 
         Parameters:
         - prey_density (float): Prey density per hectare
-        - strike_success (float): Probability of a successful strike
         - attack_rate (float): Area searched per predator per time unit
         - handling_time (float): Handling time per prey item
+        - strike_success (float): Probability of a successful strike.
+            Default of 1: Use this argument to calculate number of encounters
+            less than 1: Function calculates successful prey items caught.
 
         Returns:
         - Expected number of prey consumed per predator per time unit
         """
+        if strike_success>1:
+            raise(ValueError("Strike success is a probability that cant exceed 1"))
         return ((strike_success * attack_rate) * prey_density) / (1 + (strike_success * attack_rate) * handling_time * prey_density)
     
     def set_utilities(self):
@@ -109,12 +123,12 @@ class EctothermBehavior(object):
         predator_label = self.snake.species_name
         prey_label = self.model.interaction_map.get_prey_for_predator(predator_label=predator_label)[0]
 
-        prey_density_range = self.model.initial_agents_dictionary[prey_label]
+        prey_min_density, prey_max_density = self.model.get_population_densities(species=prey_label)
         active_prey_population_size = self.model.active_krats_count
         prey_density = self.model.calc_local_population_density(
             population_size=active_prey_population_size,
-            middle_range=prey_density_range.start,
-            max_density=prey_density_range.stop
+            middle_range=prey_min_density,
+            max_density=prey_max_density
         )
         self.prey_density = prey_density
 
@@ -128,20 +142,23 @@ class EctothermBehavior(object):
         handling_time = np.random.uniform(handling_time_range['min'], handling_time_range['max'])
         self.handling_time = handling_time
 
-        # Compute expected prey consumption using optimized `holling_type_2()`
-        expected_prey_consumed = self.holling_type_2(prey_density, self.snake.strike_performance_opt, attack_rate, handling_time)
-        prey_consumed = int(np.random.poisson(expected_prey_consumed))
+        # switched to using holling 2 function for just encounter rate 03/16`
+        expected_prey_encountered = self.holling_type_2(prey_density,  attack_rate, handling_time)
+        prey_encountered = int(np.random.poisson(expected_prey_encountered))
+        self.prey_encountered = prey_encountered
+        prey_consumed = 0 
+        if prey_encountered> 0 and active_prey_population_size >= prey_encountered:
+            for _ in range(prey_encountered):
+                strike_check = np.random.rand()
+                if strike_check < self.snake.strike_performance_opt:
+                    prey = self.model.get_active_krat()
+                    cal_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey.species_name)
+                    digestion_efficiency = self.model.interaction_map.get_digestion_efficiency(predator=predator_label, prey=prey.species_name)
+                    self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
+                    prey.alive = False
+                    prey.cause_of_death = 'predation'
+                    prey_consumed +=1
         self.prey_consumed = prey_consumed
-
-        if prey_consumed > 0 and active_prey_population_size > 0:
-            for _ in range(prey_consumed):
-                prey = self.model.get_active_krat()
-                cal_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey.species_name)
-                digestion_efficiency = self.model.interaction_map.get_digestion_efficiency(predator=predator_label, prey=prey.species_name)
-
-                # Optimize `cals_gained()` call
-                self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
-                prey.alive = False
 
     def rest(self):
         '''Resting behavior'''

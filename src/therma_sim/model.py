@@ -38,7 +38,7 @@ class ThermaSim(mesa.Model):
     def __init__(self, config, seed=42, _test=False, output_folder=None,sim_id=None):
         self.running = True
         self.config = config
-        self.initial_agents_dictionary = self.get_initial_population_params()
+        self.initial_agents_dictionary = self.get_initial_population_parameters(config=self.config)
         self.step_id = 0
         self.seed = seed
         self.sim_id = sim_id
@@ -65,7 +65,7 @@ class ThermaSim(mesa.Model):
         self.initiate_species_map()
         self.softmax_lookup_table = usl.SoftmaxLookupTable()
         ## Intialize agents
-        self.initialize_populations(initial_agent_dictionary=self.initial_agents_dictionary)
+        self.make_initial_population()
         # Data Collector
         self.make_data_loggers()
 
@@ -134,15 +134,41 @@ class ThermaSim(mesa.Model):
     def get_interaction_params(self, config):
         return config['Interaction_Parameters']
     
-    def get_initial_population_params(self):
-        pop_params = self.config['Initial_Population_Sizes']
-        
-        # Convert stored dictionaries into Python range objects
-        for species in pop_params:
-            if isinstance(pop_params[species], dict):
-                pop_params[species] = get_range(pop_params[species])
+    def get_initial_population_parameters(self,config):
+        return config['Initial_Population_Sizes']
+    
+    def get_population_densities(self, species):
+        """Retrieve the min and max population density values for a given species."""
+        params = self.initial_agents_dictionary.get(species, {})
+        density_params = params.get("Density", {})
 
-        return pop_params
+        min_density = density_params.get("start")
+        max_density = density_params.get("stop")
+
+        return min_density, max_density
+    
+    def get_initial_population_size(self, species):
+        """Retrieve the initial population size for a given species, if available."""
+        params = self.initial_agents_dictionary.get(species, {})
+        return params.get("Initial_Population")
+    
+    def make_initial_population(self):
+        total_area = self.landscape.landscape_size  # Get the total area in hectares
+        for species, params in self.initial_agents_dictionary.items():
+            if params.get('Initial_Population') is not None:
+                initial_pop_size = int(params.get('Initial_Population'))
+                self.initialize_populations_input(species=species,
+                                                  initial_population_size=initial_pop_size)
+            else:
+                # Start here tomorrow
+                density_params = params.get("Density")
+                min_density = density_params.get("start")
+                max_density = density_params.get("stop")
+                initial_pop_size = self.initialize_populations_density(species=species,
+                                                    min_density=min_density,
+                                                    max_density=max_density )
+                self.initial_agents_dictionary[species]["Initial_Population"] = initial_pop_size
+
     
     def get_interaction_map(self):
         interaction_map = self.config['Interaction_Map']
@@ -169,12 +195,12 @@ class ThermaSim(mesa.Model):
         Initiate logger_data_bases
         '''
         rattlesnake_columns = [
-            "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active", "Behavior", "Microhabitat",
+            "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active","Alive", "Behavior", "Microhabitat",
             "Body_Temperature", "Metabolic_State", "Handling_Time",
-            "Attack_Rate", "Prey_Density", "Prey_Consumed"
+            "Attack_Rate", "Prey_Density", "Prey_Encountered", "Prey_Consumed"
         ]
         kangaroo_rat_columns = [
-            "Time_Step", "Hour", "Day", "Month", "Year","Agent_id", "Active"
+            "Time_Step", "Hour", "Day", "Month", "Year","Agent_id","Alive", "Active"
         ]
         model_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year",
@@ -182,7 +208,7 @@ class ThermaSim(mesa.Model):
         ]
         birth_death_columns = [
         "Time_Step", "Agent_id","Species", "Age", "Sex", "Birth_Counter",
-        "Death_Counter", "Alive", "Event_Type", "Litter_Size"
+        "Death_Counter", "Alive", "Event_Type", "Cause_Of_Death", "Litter_Size"
         ]
         self.logger = dl.DataLogger()
         self.logger.make_data_reporter(file_name=self.output_folder+"Rattlesnake.csv", column_names = rattlesnake_columns)
@@ -375,33 +401,48 @@ class ThermaSim(mesa.Model):
             self.place_agent(agent, pos)
         self.schedule.add(agent)
 
-    def initialize_populations(self, initial_agent_dictionary, spatially_explicit=False):
+    def initialize_populations_density(self, species, min_density, max_density, spatially_explicit=False):
         """
         Initializes the model's agent populations.
         Population sizes should be a range of individuals per hectare.
         """
+        initial_pop_size = 0
         agent_id = 0
         for hect in range(self.landscape.landscape_size):
-            for species, initial_population_size_range in initial_agent_dictionary.items():
-                # Ensure `initial_population_size_range` is a range object
-                if isinstance(initial_population_size_range, dict):
-                    initial_population_size_range = get_range(initial_population_size_range)
+            # Ensure initial_population_size_range is a range object
+            start, stop = min_density, max_density
+            initial_pop_size = round(np.random.uniform(start, stop))
 
-                start, stop = initial_population_size_range.start, initial_population_size_range.stop
-                initial_pop_size = round(np.random.uniform(start, stop))
+            # Scale population size by hectare
+            for _ in range(initial_pop_size):
+                if spatially_explicit:
+                    pos = (np.random.uniform(0, self.landscape.width), np.random.uniform(0, self.landscape.height))
+                    self.give_birth(species_name=species, pos=pos, initial_pop=True, agent_id=agent_id)
+                else:
+                    self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
+                
+                agent_id += 1
+                self.next_agent_id = agent_id + 1
+                initial_pop_size += 1
+        print(f"No initial Population size for {species}, calculated {initial_pop_size} from densities and landscape size")
+        return initial_pop_size
 
-                # Scale population size by hectare
-                for _ in range(initial_pop_size):
-                    if spatially_explicit:
-                        pos = (np.random.uniform(0, self.landscape.width), np.random.uniform(0, self.landscape.height))
-                        self.give_birth(species_name=species, pos=pos, initial_pop=True, agent_id=agent_id)
-                    else:
-                        self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
-                    
-                    agent_id += 1
-                    self.next_agent_id = agent_id + 1
-                    #print(pos,agent_id)
-                                    
+    def initialize_populations_input(self, species, initial_population_size, spatially_explicit=False):
+        """
+        Initializes the model's agent populations.
+        Population sizes can be explicitly provided or calculated based on density.
+        """
+        agent_id = 0
+        for _ in range(initial_population_size):
+            if spatially_explicit:
+                pos = (np.random.uniform(0, self.landscape.width), np.random.uniform(0, self.landscape.height))
+                self.give_birth(species_name=species, pos=pos, initial_pop=True, agent_id=agent_id)
+            else:
+                self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
+
+            agent_id += 1
+            self.next_agent_id = agent_id + 1
+
 
     def randomize_snakes(self):
         '''
@@ -497,8 +538,10 @@ class ThermaSim(mesa.Model):
         # Snakes
         snake_shuffle = self.randomize_snakes()
         for snake in snake_shuffle:
-            self.logger.log_data(file_name = self.output_folder+"Rattlesnake.csv", data=snake.report_data())
+            data = snake.report_data()
+            self.logger.log_data(file_name = self.output_folder+"Rattlesnake.csv", data=data)
             snake.step()
+            data = None
         snake_shuffle = self.randomize_snakes()
         # Krats
         krat_shuffle = self.randomize_krats()

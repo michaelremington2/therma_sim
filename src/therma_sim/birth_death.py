@@ -84,6 +84,7 @@ class Birth_Death_Module(object):
             self.death_counter,
             self.agent.alive,
             event_type,
+            self.agent.cause_of_death, 
             litter_size
         ]
 
@@ -95,6 +96,7 @@ class Birth_Death_Module(object):
         # If the agent is expected to die before it reproduces, ignore birth updates
         if self.death_counter <= 0:
             self.agent.alive = False
+            self.agent.cause_of_death = 'old_age'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
             return  # Stop processing if the agent dies
 

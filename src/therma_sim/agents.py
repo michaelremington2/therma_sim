@@ -84,6 +84,7 @@ class Rattlesnake(mesa.Agent):
         # Agent logisic checks
         self._active = False
         self._alive = True
+        self._cause_of_death  = None
 
 
     @property
@@ -146,6 +147,19 @@ class Rattlesnake(mesa.Agent):
     def pos(self, value):
         self._pos = value
 
+    @property
+    def cause_of_death(self):
+        """Returns the cause of death, if any."""
+        return self._cause_of_death
+
+    @cause_of_death.setter
+    def cause_of_death(self, value):
+        """Sets the cause of death only if the agent is dead."""
+        if not self.alive:
+            self._cause_of_death = value
+        else:
+            raise ValueError("Cannot set cause of death while agent is still alive.")
+
     def set_reproductive_age_steps(self, reproductive_age_years):
         """
         Sets the reproductive age in simulation steps if not already set.
@@ -196,6 +210,7 @@ class Rattlesnake(mesa.Agent):
             self.behavior_module.handling_time,
             self.behavior_module.attack_rate,
             self.behavior_module.prey_density,
+            self.behavior_module.prey_encountered, 
             self.behavior_module.prey_consumed
         ]
 
@@ -284,6 +299,7 @@ class Rattlesnake(mesa.Agent):
         '''
         if self.metabolism.metabolic_state<=0:
             self.alive = False
+            self.cause_of_death = 'starved'
 
     def move(self):
         pass
@@ -346,6 +362,7 @@ class KangarooRat(mesa.Agent):
         # Agent is actively foraging
         self._active = False
         self._alive = True
+        self._cause_of_death  = None
 
     @property
     def species_name(self):
@@ -386,6 +403,17 @@ class KangarooRat(mesa.Agent):
     @reproductive_agent.setter
     def reproductive_agent(self, value):
         self._reproductive_agent = value  # Ensure manual setting works
+
+    @property
+    def cause_of_death(self):
+        """Returns the cause of death, if any."""
+        return self._cause_of_death
+
+    @cause_of_death.setter
+    def cause_of_death(self, value):
+        """Sets the cause of death only if the agent is dead."""
+        if not self.alive:
+            self._cause_of_death = value
 
     def report_data(self):
         """
@@ -440,6 +468,8 @@ class KangarooRat(mesa.Agent):
         Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
         '''
         self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
+        if not self.alive:
+            self.cause_of_death = 'Random'
 
     def initiate_birth_death_module(self, birth_config, initial_pop):
         '''
