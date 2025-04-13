@@ -45,6 +45,8 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_min = self.snake_config['t_pref_min']
             self.t_pref_max = self.snake_config['t_pref_max']
             self.t_opt = self.snake_config['t_opt']
+            self.ct_min = self.snake_config['ct_min']
+            self.ct_max = self.snake_config['ct_max']
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
             self.max_thermal_accuracy = self.snake_config['max_thermal_accuracy'] #Replace this with an input value later
             # Birth Module
@@ -63,6 +65,8 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_min = None
             self.t_pref_max = None
             self.t_opt = None
+            self.ct_min = None
+            self.ct_max = None
             self.strike_performance_opt = None
             self.birth_death_module = None
             self.max_age = 20
@@ -78,8 +82,8 @@ class Rattlesnake(mesa.Agent):
 
         # Microhabitat
         self._current_microhabitat = ''
-        self.microhabitat_history = []
-        self.body_temp_history = []
+        # self.microhabitat_history = []
+        # self.body_temp_history = []
 
         # Agent logisic checks
         self._active = False
@@ -186,7 +190,7 @@ class Rattlesnake(mesa.Agent):
         return birth_death.Birth_Death_Module(model=self.model, agent=self,
                 mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
                 upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["lower_bound_litter_size"],
-                litters_per_year=birth_config["litters_per_year"],
+                max_litters=birth_config["max_litters"],
                 birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"],
                 initial_pop=initial_pop)
     
@@ -282,16 +286,10 @@ class Rattlesnake(mesa.Agent):
         Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
         '''
         self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
-
-    # def check_reproductive_status(self):
-    #     """
-    #     This function checks if a rattlesnake is reproductive based on age and sex.
-    #     It should be called inside `agent_checks()`.
-    #     """
-    #     if self.sex == 'Female' and self.age >= self.reproductive_age_steps:
-    #         self._reproductive_agent = True  
-    #     else:
-    #         self._reproductive_agent = False 
+        if self.alive == False:
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
+                            data=self.birth_death_module.report_data(event_type='Death'))
+            self.model.remove_agent(self)
     
     def is_starved(self):
         '''
@@ -300,6 +298,9 @@ class Rattlesnake(mesa.Agent):
         if self.metabolism.metabolic_state<=0:
             self.alive = False
             self.cause_of_death = 'starved'
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
+                                       data=self.birth_death_module.report_data(event_type='Death'))
+            self.model.remove_agent(self)
 
     def move(self):
         pass
@@ -346,6 +347,7 @@ class KangarooRat(mesa.Agent):
         self.age = age
         if self.krat_config is not None:
             self.active_hours = self.krat_config['active_hours']
+            self.energy_budget = self.krat_config["energy_budget"]
             self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
             self.max_age_steps = self.krat_config['max_age']*self.model.steps_per_year
             self.moore = self.krat_config['moore']
@@ -354,6 +356,7 @@ class KangarooRat(mesa.Agent):
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'], initial_pop=self.initial_pop)
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+            self.energy_budget = len(self.active_hours)
             self.mass = 10
             self.max_age = 6
             self.moore = True
@@ -362,7 +365,7 @@ class KangarooRat(mesa.Agent):
         # Agent is actively foraging
         self._active = False
         self._alive = True
-        self._cause_of_death  = None
+        self._cause_of_death = None
 
     @property
     def species_name(self):
@@ -414,6 +417,9 @@ class KangarooRat(mesa.Agent):
         """Sets the cause of death only if the agent is dead."""
         if not self.alive:
             self._cause_of_death = value
+        else:
+            self._cause_of_death = None
+            
 
     def report_data(self):
         """
@@ -451,7 +457,8 @@ class KangarooRat(mesa.Agent):
         return mass
     
     def activate_krat(self, hour):
-        if hour in self.active_hours:
+        activity_budget = np.random.choice(self.active_hours, self.energy_budget, replace=False)
+        if hour in activity_budget:
             self.active = True
         else:
             self.active = False
@@ -470,17 +477,23 @@ class KangarooRat(mesa.Agent):
         self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
         if not self.alive:
             self.cause_of_death = 'Random'
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
+                            data=self.birth_death_module.report_data(event_type='Death'))
 
     def initiate_birth_death_module(self, birth_config, initial_pop):
         '''
         Helper function for setting up bith module for organisms
         '''
-        return birth_death.Birth_Death_Module(model=self.model, agent=self,
-                mean_litter_size=birth_config["mean_litter_size"], std_litter_size=birth_config["std_litter_size"],
-                upper_bound_litter_size=birth_config["upper_bound_litter_size"], lower_bound_litter_size=birth_config["lower_bound_litter_size"],
-                litters_per_year=birth_config["litters_per_year"],
-                birth_hazard_rate=birth_config["birth_hazard_rate"], death_hazard_rate=birth_config["death_hazard_rate"],
-                initial_pop=initial_pop)
+        return birth_death.Birth_Death_Module(model=self.model, 
+                                              agent=self,
+                                              mean_litter_size=birth_config["mean_litter_size"], 
+                                              std_litter_size=birth_config["std_litter_size"],
+                                              upper_bound_litter_size=birth_config["upper_bound_litter_size"], 
+                                              lower_bound_litter_size=birth_config["lower_bound_litter_size"],
+                                              max_litters=birth_config["max_litters"],
+                                              birth_hazard_rate=birth_config["birth_hazard_rate"], 
+                                              death_hazard_rate=birth_config["death_hazard_rate"],
+                                              initial_pop=initial_pop)
 
     def von_mises_move(self, current_pos):
         direction = np.random.vonmises()

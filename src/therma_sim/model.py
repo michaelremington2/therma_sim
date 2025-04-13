@@ -36,6 +36,7 @@ class ThermaSim(mesa.Model):
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
     def __init__(self, config, seed=42, _test=False, output_folder=None,sim_id=None):
+        super().__init__()
         self.running = True
         self.config = config
         self.initial_agents_dictionary = self.get_initial_population_parameters(config=self.config)
@@ -155,7 +156,7 @@ class ThermaSim(mesa.Model):
     def make_initial_population(self):
         total_area = self.landscape.landscape_size  # Get the total area in hectares
         for species, params in self.initial_agents_dictionary.items():
-            if params.get('Initial_Population') is not None:
+            if params.get('Initial_Population'):
                 initial_pop_size = int(params.get('Initial_Population'))
                 self.initialize_populations_input(species=species,
                                                   initial_population_size=initial_pop_size)
@@ -326,9 +327,9 @@ class ThermaSim(mesa.Model):
             params = values["input_parameters"]()
             if "annual_survival_probability" in params:
                 hourly_survival_probability = ThermaSim.bernouli_trial_hourly(
-                    annual_probability=params["annual_survival_probability"],
-                    steps_per_year=self.steps_per_year
-                )
+                                                annual_probability=params["annual_survival_probability"],
+                                                steps_per_year=self.steps_per_year
+                                            )
             else:
                 raise ValueError(f"Missing 'annual_survival_probability' for {species}")
             # Store precomputed values
@@ -380,7 +381,7 @@ class ThermaSim(mesa.Model):
 
         
     ## Intialize populations and births
-    def give_birth(self, species_name, agent_id, pos=None, parent=None, initial_pop=False):
+    def give_birth(self, species_name, pos=None, parent=None, initial_pop=False):
         """
         Helper function - Adds new agents to the landscape
         """
@@ -393,9 +394,9 @@ class ThermaSim(mesa.Model):
         if initial_pop:
             max_age = agent_params['max_age']
             rand_age = int(np.random.uniform(0,max_age*self.steps_per_year))
-            agent = agent_class(unique_id=agent_id, model=self, config=agent_params, age = rand_age, initial_pop=initial_pop)
+            agent = agent_class(unique_id=self.next_id(), model=self, config=agent_params, age = rand_age, initial_pop=initial_pop)
         else:
-            agent = agent_class(unique_id=agent_id, model=self, age=0, config=agent_params)
+            agent = agent_class(unique_id=self.next_id(), model=self, age=0, config=agent_params)
 
         if pos is not None:
             self.place_agent(agent, pos)
@@ -407,7 +408,6 @@ class ThermaSim(mesa.Model):
         Population sizes should be a range of individuals per hectare.
         """
         initial_pop_size = 0
-        agent_id = 0
         for hect in range(self.landscape.landscape_size):
             # Ensure initial_population_size_range is a range object
             start, stop = min_density, max_density
@@ -417,12 +417,9 @@ class ThermaSim(mesa.Model):
             for _ in range(initial_pop_size):
                 if spatially_explicit:
                     pos = (np.random.uniform(0, self.landscape.width), np.random.uniform(0, self.landscape.height))
-                    self.give_birth(species_name=species, pos=pos, initial_pop=True, agent_id=agent_id)
+                    self.give_birth(species_name=species, pos=pos, initial_pop=True)
                 else:
-                    self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
-                
-                agent_id += 1
-                self.next_agent_id = agent_id + 1
+                    self.give_birth(species_name=species, initial_pop=True)
                 initial_pop_size += 1
         print(f"No initial Population size for {species}, calculated {initial_pop_size} from densities and landscape size")
         return initial_pop_size
@@ -432,17 +429,12 @@ class ThermaSim(mesa.Model):
         Initializes the model's agent populations.
         Population sizes can be explicitly provided or calculated based on density.
         """
-        agent_id = 0
         for _ in range(initial_population_size):
             if spatially_explicit:
                 pos = (np.random.uniform(0, self.landscape.width), np.random.uniform(0, self.landscape.height))
-                self.give_birth(species_name=species, pos=pos, initial_pop=True, agent_id=agent_id)
+                self.give_birth(species_name=species, pos=pos, initial_pop=True)
             else:
-                self.give_birth(species_name=species, agent_id=agent_id, initial_pop=True)
-
-            agent_id += 1
-            self.next_agent_id = agent_id + 1
-
+                self.give_birth(species_name=species, initial_pop=True)
 
     def randomize_snakes(self):
         '''

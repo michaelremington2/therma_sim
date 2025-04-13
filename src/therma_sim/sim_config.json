@@ -10,28 +10,30 @@
     },
     "Initial_Population_Sizes": {
         "KangarooRat": {"Density":{"start": 3, "stop": 14, "step": 1},
-                        "Initial_Population": 5000 },
+                        "Initial_Population":false},
         "Rattlesnake": {"Density":{"start": 0, "stop": 1, "step": 1},
-                        "Initial_Population": 500}
+                        "Initial_Population":false}
     },
     "Rattlesnake_Parameters": {
         "Body_sizes": {"start": 370, "stop": 791, "step": 1},
         "Initial_Body_Temperature": 25,
-        "initial_calories": {"start": 50, "stop": 100, "step": 1},
-        "max_meals": 2,
+        "initial_calories": {"start": 1000, "stop": 3000, "step": 5},
+        "max_meals": 3,
         "reproductive_age_years": 2,
-        "max_age": 20,
-        "max_thermal_accuracy": 5,
+        "max_age": 12,
+        "max_thermal_accuracy": 3,
         "k": 0.01,
         "t_pref_min": 18,
         "t_pref_max": 32,
         "t_opt": 28,
+        "ct_min":-10,
+        "ct_max":50,
         "strike_performance_opt": 0.21,
         "delta_t": 60,
         "X1_mass": 0.930,
         "X2_temp": 0.044,
         "X3_const": -2.58,
-        "annual_survival_probability": 0.75,
+        "annual_survival_probability": 0.9,
         "brumination_months": [10, 11, 12, 1, 2, 3, 4],
         "birth_death_module": {
             "mean_litter_size": 4.6,
@@ -40,24 +42,27 @@
             "lower_bound_litter_size": 2,
             "litters_per_year": 0.5,
             "birth_hazard_rate": 0.4,
-            "death_hazard_rate": 0.0667
+            "death_hazard_rate": 0.0667,
+            "max_litters": 3
         },
         "moore": false
     },
     "KangarooRat_Parameters": {
-        "Body_sizes": {"start": 60, "stop": 71, "step": 1},
+        "Body_sizes": {"start": 60, "stop": 70, "step": 1},
         "active_hours": [20, 21, 22, 23, 24, 0, 1, 2, 3, 4, 5, 6],
-        "annual_survival_probability": 0.65,
+        "energy_budget":6,
+        "annual_survival_probability": 0.6,
         "reproductive_age_years": 1,
         "max_age": 6,
         "birth_death_module": {
             "mean_litter_size": 3.5,
-            "std_litter_size": 1,
+            "std_litter_size": 2,
             "upper_bound_litter_size": 6,
             "lower_bound_litter_size": 1,
             "litters_per_year": 1,
             "birth_hazard_rate": 1,
-            "death_hazard_rate": 0.2
+            "death_hazard_rate": 0.2, 
+            "max_litters": 5
         },
         "moore": false
     },
@@ -72,8 +77,8 @@
                 "max": 1
             },
             "attack_rate_range": {
-                "min": 0.05,
-                "max": 0.05
+                "min": 0.001,
+                "max": 0.001
             }
         }
     }

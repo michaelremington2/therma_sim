@@ -7,7 +7,7 @@ class Birth_Death_Module(object):
     Class for handling birth and death events using an exponential waiting time counter.
     '''
     def __init__(self, model, agent,
-                litters_per_year: float, mean_litter_size: float, std_litter_size: float,
+                max_litters: float, mean_litter_size: float, std_litter_size: float,
                 upper_bound_litter_size: int, lower_bound_litter_size: int,
                 birth_hazard_rate: float, death_hazard_rate: float, initial_pop=False):
         self.model = model
@@ -18,8 +18,8 @@ class Birth_Death_Module(object):
                                                         min_steps = 0,
                                                         max_steps = self.agent.max_age_steps)
         # Death parameters
-        if initial_pop and self.agent.age < self.death_counter:
-            self.death_counter = self.death_counter - self.agent.age
+        # if initial_pop and self.agent.age < self.death_counter:
+        #     self.death_counter = self.death_counter - self.agent.age
         # Birth parameters
         self.birth_counter = np.inf
         if self.agent.sex=='Female':
@@ -27,7 +27,7 @@ class Birth_Death_Module(object):
             self.std_litter_size = std_litter_size
             self.upper_bound_litter_size = upper_bound_litter_size
             self.lower_bound_litter_size = lower_bound_litter_size
-            self.litters_per_year = litters_per_year
+            self.max_litters = max_litters
             # Compute hazard rates
             self.hazard_rate_birth = birth_hazard_rate
             ## Hidden variables for litter size distribution
@@ -74,6 +74,15 @@ class Birth_Death_Module(object):
         """
         Extracts model-level data into a list for CSV logging.
         """
+        if hasattr(self.agent, 'body_temperature'):
+            bd = self.agent.body_temperature
+            ct_min = self.agent.ct_min
+            ct_max = self.agent.ct_max
+        else:
+            bd = None
+            ct_min = None
+            ct_max = None
+
         return [
             self.model.step_id,
             self.agent.unique_id,
@@ -86,36 +95,62 @@ class Birth_Death_Module(object):
             self.agent.alive,
             event_type,
             self.agent.cause_of_death, 
-            litter_size
+            litter_size,
+            bd,
+            ct_min,
+            ct_max
         ]
+    
+    def thermal_critical_death(self):
+        """
+        Function for murdering snakes that dear leave their critcal thermal bredth
+        """
+        if self.agent.body_temperature < self.agent.ct_min:
+            self.agent.alive = False
+            self.agent.cause_of_death = 'Frozen'
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
+            self.model.remove_agent(self.agent)
+            return
+        elif self.agent.body_temperature > self.agent.ct_max:
+            self.agent.alive = False
+            self.agent.cause_of_death = 'Cooked'
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
+            self.model.remove_agent(self.agent)
+            return
+            
 
     def step(self):
         """
         Decrement counters at each timestep and trigger events when they reach zero.
         Optimized: If the agent will die before reproducing, we only decrement the death counter.
         """
+        # Thermal Crtical
+        if hasattr(self.agent, 'body_temperature'):
+            self.thermal_critical_death()
         # If the agent is expected to die before it reproduces, ignore birth updates
         if self.death_counter <= 0:
             self.agent.alive = False
             self.agent.cause_of_death = 'old_age'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
+            self.model.remove_agent(self.agent)
             return  # Stop processing if the agent dies
 
         # If birth happens before death, process birth
-        if self.agent.sex == 'Female' and self.birth_counter <= 0:
+        if self.agent.sex == 'Female' and self.birth_counter <= 0 and self.max_litters>0:
             litter_size = self.litter_size()
             species = self.agent.species_name
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Birth', litter_size=litter_size))
             for _ in range(litter_size):
-                self.model.give_birth(species_name=species, agent_id=self.model.next_agent_id)
-                self.model.next_agent_id += 1
+                self.model.give_birth(species_name=species)
             # Reset Birth Counter
             self.birth_counter = self.bounded_exponential_wait_time(
                 hazard_rate=self.hazard_rate_birth, 
                 steps_per_year=self.model.steps_per_year,
                 min_steps=self.agent.reproductive_age_steps
             )
+            self.max_litters-=1
         self.birth_counter -= 1
         self.death_counter -= 1
+        
 
 

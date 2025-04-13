@@ -134,7 +134,10 @@ class EctothermBehavior(object):
 
         # Attack rate
         attack_range = self.model.interaction_map.get_attack_rate_range(predator=predator_label, prey=prey_label)
-        attack_rate = np.random.uniform(attack_range['min'], attack_range['max'])
+        if attack_range['min']!=attack_range['max']:
+            attack_rate = np.random.uniform(attack_range['min'], attack_range['max'])
+        else:
+            attack_rate = attack_range['min']
         self.attack_rate = attack_rate
 
         # Handling time
@@ -157,6 +160,9 @@ class EctothermBehavior(object):
                     self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
                     prey.alive = False
                     prey.cause_of_death = 'predation'
+                    self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
+                                               data=prey.birth_death_module.report_data(event_type='Death'))
+                    self.model.remove_agent(prey)
                     prey_consumed +=1
         self.prey_consumed = prey_consumed
 
