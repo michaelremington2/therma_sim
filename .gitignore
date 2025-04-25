@@ -160,9 +160,10 @@ cython_debug/
 #.idea/
 
 ### Custom ignores
-src/therma_sim/Data/
+src/therma_sim/Input_Temperature_Data/
 src/therma_sim/Output_Data/
 src/therma_sim/scratch_scripts/
 src/therma_sim/Notes/
 src/therma_sim/Results/
 Data/
+Empirical_Data/
