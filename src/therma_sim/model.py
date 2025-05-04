@@ -549,6 +549,7 @@ class ThermaSim(mesa.Model):
 
     def run_model(self, step_count=None):
         max_steps = len(self.landscape.thermal_profile)-1
+        print('Site: {}')
         if step_count is None:
             step_count = max_steps
         elif max_steps <= step_count:
