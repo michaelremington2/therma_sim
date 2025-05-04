@@ -36,7 +36,8 @@ class Rattlesnake(mesa.Agent):
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
             self.max_age_steps = self.snake_config['max_age']*self.model.steps_per_year
             self.moore = self.snake_config['moore']
-            self.brumation_months = self.snake_config['brumination_months']
+            self.brumation_months = self.snake_config['brumination']['Months']
+            self.brumation_temp = self.snake_config['brumination']['Temperature']
             self.hourly_survival_probability = hourly_survival_probability
             # Temperature
             self.delta_t = self.snake_config['delta_t']
@@ -45,8 +46,9 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_min = self.snake_config['t_pref_min']
             self.t_pref_max = self.snake_config['t_pref_max']
             self.t_opt = self.snake_config['t_opt']
-            self.ct_min = self.snake_config['ct_min']
-            self.ct_max = self.snake_config['ct_max']
+            self.ct_min = self.snake_config['volintary_ct']['min_temp']
+            self.ct_max = self.snake_config['volintary_ct']['max_temp']
+            self.ct_max_steps = self.snake_config['volintary_ct']['max_steps']
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
             self.max_thermal_accuracy = self.snake_config['max_thermal_accuracy'] #Replace this with an input value later
             # Birth Module
@@ -118,7 +120,10 @@ class Rattlesnake(mesa.Agent):
 
     @body_temperature.setter
     def body_temperature(self, value):
-        self._body_temperature = value
+        if self.model.month in self.brumation_months:
+            self._body_temperature = self.brumation_temp
+        else:
+            self._body_temperature = value
 
     @property
     def active(self):

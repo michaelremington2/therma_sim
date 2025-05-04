@@ -38,6 +38,33 @@ class Birth_Death_Module(object):
                 steps_per_year=self.model.steps_per_year,
                 min_steps=self.agent.reproductive_age_steps
             )
+        self._ct_out_of_bounds_tcounter = 0
+
+    @property
+    def ct_out_of_bounds_tcounter(self):
+        """
+        Property to get the current value of the critical temperature out of bounds counter.
+        """
+        if self.model.month in self.agent.brumation_months:
+            return 0
+        else:
+            return self._ct_out_of_bounds_tcounter
+        
+    @ct_out_of_bounds_tcounter.setter
+    def ct_out_of_bounds_tcounter(self, value):
+        """
+        Property to set the value of the critical temperature out of bounds counter.
+        """
+        if self.model.month in self.agent.brumation_months:
+            self._ct_out_of_bounds_tcounter = 0
+        else:
+            self._ct_out_of_bounds_tcounter = value
+        # Ensure the counter is not negative
+        if self._ct_out_of_bounds_tcounter < 0:
+            self._ct_out_of_bounds_tcounter = 0
+        # Ensure the counter does not exceed the maximum value
+        if self._ct_out_of_bounds_tcounter > self.agent.ct_max_steps:
+            return self.agent.ct_max_steps 
     
     def bounded_exponential_wait_time(self, hazard_rate, steps_per_year, min_steps, max_steps=None):
         """
@@ -101,10 +128,56 @@ class Birth_Death_Module(object):
             ct_max
         ]
     
+    def ct_death_probability_calculator(self, initialProb=0):
+        """
+        Calculates death probability using y = mx + b form.
+        
+        Parameters:
+        - t (int): Current time step
+        - tmax (int): Time step at which death probability reaches 1
+        - initialProb (float): Death probability at t = 0
+        
+        Returns:
+        - float: Probability of death at time t
+        """
+        if self.ct_out_of_bounds_tcounter <= 0:
+            return initialProb
+        elif self.ct_out_of_bounds_tcounter >= self.agent.ct_max_steps:
+            return 1.0
+        else:
+            m = (1.0 - initialProb) / self.agent.ct_max_steps
+            return m * self.ct_out_of_bounds_tcounter + initialProb
+    
+    def critical_death_sub_model(self):
+        '''
+        Function for checking if the agent is within its critical temperature range
+        Checks a out out of bounds counter and the probability of death increases linearly.
+        '''
+        if self.agent.body_temperature < self.agent.ct_min:
+            self.ct_out_of_bounds_tcounter += 1
+            # Calculate Death Probability
+            death_prob = self.ct_death_probability_calculator(initialProb=0.0)
+            # Check if the agent dies
+            if np.random.rand() < death_prob:
+                self.thermal_critical_death()
+                return
+        elif self.agent.body_temperature > self.agent.ct_max:
+            self.ct_out_of_bounds_tcounter += 1
+            death_prob = self.ct_death_probability_calculator(initialProb=0.0)
+            # Check if the agent dies
+            if np.random.rand() < death_prob:
+                self.thermal_critical_death()
+                return
+        else:
+            self._ct_out_of_bounds_tcounter = 0
+            # Reset the counter if within bounds
+ 
+    
     def thermal_critical_death(self):
         """
         Function for murdering snakes that dear leave their critcal thermal bredth
         """
+         
         if self.agent.body_temperature < self.agent.ct_min:
             self.agent.alive = False
             self.agent.cause_of_death = 'Frozen'
@@ -126,7 +199,7 @@ class Birth_Death_Module(object):
         """
         # Thermal Crtical
         if hasattr(self.agent, 'body_temperature'):
-            self.thermal_critical_death()
+            self.critical_death_sub_model()
         # If the agent is expected to die before it reproduces, ignore birth updates
         if self.death_counter <= 0:
             self.agent.alive = False
