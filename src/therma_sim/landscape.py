@@ -16,7 +16,7 @@ import polars as pl
 import agents
 
 class Spatially_Implicit_Landscape(object):
-    def __init__(self, model, width: int, height: int, thermal_profile_csv_fp: str):
+    def __init__(self, model, site_name:str, width: int, height: int, thermal_profile_csv_fp: str):
         self.model = model
         self.hectare_to_meter = 10000
         self.width_hectare = width
@@ -24,6 +24,7 @@ class Spatially_Implicit_Landscape(object):
         self.landscape_size = self.width_hectare * self.height_hectare
         self.microhabitats = ['Burrow', 'Open']
         self.thermal_profile = pl.read_csv(thermal_profile_csv_fp)
+        self.site_name = site_name
         self._burrow_temperature = None
         self._open_temperature = None
     

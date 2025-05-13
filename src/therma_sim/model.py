@@ -272,6 +272,7 @@ class ThermaSim(mesa.Model):
         '''
         ls_params = self.get_landscape_params(config = self.config)
         return landscape.Spatially_Implicit_Landscape(model = model,
+                                                      site_name = ls_params['site_name'],
                                                       width = ls_params['Width'],
                                                       height = ls_params['Height'],
                                                       thermal_profile_csv_fp = ls_params['Thermal_Database_fp'])

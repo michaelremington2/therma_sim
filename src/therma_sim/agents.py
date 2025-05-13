@@ -8,6 +8,7 @@ import pandas as pd
 import metabolism
 import behavior 
 import birth_death
+import json
 
 
 # Rattlesnake temperature model
@@ -36,8 +37,8 @@ class Rattlesnake(mesa.Agent):
             self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
             self.max_age_steps = self.snake_config['max_age']*self.model.steps_per_year
             self.moore = self.snake_config['moore']
-            self.brumation_months = self.snake_config['brumination']['Months']
-            self.brumation_temp = self.snake_config['brumination']['Temperature']
+            self.brumation_period = self.get_brumination_period(file_path = self.snake_config['brumination']['file_path'])
+            self.brumation_temp = self.snake_config['brumination']['temperature']
             self.hourly_survival_probability = hourly_survival_probability
             # Temperature
             self.delta_t = self.snake_config['delta_t']
@@ -59,7 +60,7 @@ class Rattlesnake(mesa.Agent):
             self.metabolism = None
             self.mass = None
             self.moore = False
-            self.brumation_months = []
+            self.brumation_period = []
             self.hourly_survival_probability = 1
             self.delta_t = None
             self._body_temperature = None
@@ -132,7 +133,7 @@ class Rattlesnake(mesa.Agent):
     @active.setter
     def active(self, value):
         # Force inactivity if agent is dead or in brumation
-        if not self.alive or self.model.month in self.brumation_months:
+        if not self.alive:
             self._active = False
         elif self.current_microhabitat=='Burrow':
             self._active = False
@@ -142,6 +143,8 @@ class Rattlesnake(mesa.Agent):
             self._active = True
         elif self.current_behavior == 'Forage':
             self._active = True
+        elif self.is_bruminating_today():
+            self._active = False
         else:
             self._active = bool(value)  # Ensures it's explicitly True/False
 
@@ -175,6 +178,30 @@ class Rattlesnake(mesa.Agent):
             self._cause_of_death = value
         else:
             raise ValueError("Cannot set cause of death while agent is still alive.")
+        
+    def get_brumination_period(self, file_path):
+        '''
+        Function to read in the brumation period from a JSON file
+        and convert date strings into (month, day) tuples.
+        '''
+        with open(file_path, 'r') as f:
+            data = json.load(f)  # Expects format: {"Canada": ["01-01", "01-02", ...]}
+        if len(data) != 1:
+            raise ValueError("JSON must contain exactly one site entry.")
+        site_name = list(data.keys())[0]
+        date_strs = data[site_name]
+        if site_name != self.model.landscape.site_name:
+            raise ValueError(
+                f"Site name in JSON file '{site_name}' does not match model site name '{self.model.landscape.site_name}'."
+            )
+        self.brumination_period = [
+            (int(date.split('-')[0]), int(date.split('-')[1]))
+            for date in date_strs
+        ]
+
+    def is_bruminating_today(self):
+        return (self.model.month, self.model.day) in self.brumination_period
+
 
     def set_reproductive_age_steps(self, reproductive_age_years):
         """
