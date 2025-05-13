@@ -131,12 +131,19 @@ class Rattlesnake(mesa.Agent):
 
     @active.setter
     def active(self, value):
-        if self.model.month in self.brumation_months:
+        # Force inactivity if agent is dead or in brumation
+        if not self.alive or self.model.month in self.brumation_months:
             self._active = False
-        elif self.alive==False:
+        elif self.current_microhabitat=='Burrow':
             self._active = False
+        elif self.current_behavior == 'Rest':
+            self._active = False
+        elif self.current_behavior == 'Thermoregulate':
+            self._active = True
+        elif self.current_behavior == 'Forage':
+            self._active = True
         else:
-            self._active = value
+            self._active = bool(value)  # Ensures it's explicitly True/False
 
     @property
     def alive(self):

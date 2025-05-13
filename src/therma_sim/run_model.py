@@ -1,4 +1,4 @@
-import json
+import yaml
 import argparse
 import time
 import os
@@ -8,7 +8,7 @@ import agents
 def main():
     # Set up argparse
     parser = argparse.ArgumentParser(description="Run ThermaSim model with a JSON configuration.")
-    parser.add_argument("--config", type=str, required=True, help="Path to the JSON configuration file.")
+    parser.add_argument("--config", type=str, required=True, help="Path to the YAML configuration file.")
     parser.add_argument("--steps", type=int, default=None, help="Number of steps to run the model (optional).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility.")
     parser.add_argument("--output", type=str, default="", help="Directory to save output files.")
@@ -17,8 +17,16 @@ def main():
     args = parser.parse_args()
 
     # Load the JSON configuration
-    with open(args.config, "r") as f:
-        config = json.load(f)
+    if args.config.endswith(".yaml") or args.config.endswith(".yml"):
+        import yaml
+        with open(args.config, "r") as f:
+            config = yaml.safe_load(f)
+    elif args.config.endswith(".json"):
+        import json
+        with open(args.config, "r") as f:
+            config = json.load(f)
+    else:
+        raise ValueError("Unsupported config file format. Use .json or .yaml")
 
     # Ensure output directory exists
     os.makedirs(args.output, exist_ok=True)
