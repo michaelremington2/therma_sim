@@ -121,7 +121,7 @@ class Rattlesnake(mesa.Agent):
 
     @body_temperature.setter
     def body_temperature(self, value):
-        if self.model.month in self.brumation_months:
+        if self.is_bruminating_today():
             self._body_temperature = self.brumation_temp
         else:
             self._body_temperature = value

@@ -45,7 +45,7 @@ class Birth_Death_Module(object):
         """
         Property to get the current value of the critical temperature out of bounds counter.
         """
-        if self.model.month in self.agent.brumation_months:
+        if self.agent.is_bruminating_today:
             return 0
         else:
             return self._ct_out_of_bounds_tcounter
@@ -55,7 +55,7 @@ class Birth_Death_Module(object):
         """
         Property to set the value of the critical temperature out of bounds counter.
         """
-        if self.model.month in self.agent.brumation_months:
+        if self.agent.is_bruminating_today:
             self._ct_out_of_bounds_tcounter = 0
         else:
             self._ct_out_of_bounds_tcounter = value

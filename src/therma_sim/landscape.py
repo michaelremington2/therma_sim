@@ -55,12 +55,12 @@ class Spatially_Implicit_Landscape(object):
 
     def count_steps_in_one_year(self) -> int:
         self.thermal_profile = self.thermal_profile.with_columns(
-            pl.col("DateTime").str.to_datetime("%Y-%m-%d %H:%M:%S")
+            pl.col("datetime").str.to_datetime("%Y-%m-%d %H:%M:%S")
         )
-        first_day = self.thermal_profile["DateTime"].min()
+        first_day = self.thermal_profile["datetime"].min()
         one_year_later = first_day + pl.duration(days=365)
         steps_count = self.thermal_profile.filter(
-            (pl.col("DateTime") >= first_day) & (pl.col("DateTime") < one_year_later)
+            (pl.col("datetime") >= first_day) & (pl.col("datetime") < one_year_later)
         ).height
         return steps_count
 
