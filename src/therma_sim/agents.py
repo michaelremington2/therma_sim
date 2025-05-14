@@ -105,7 +105,10 @@ class Rattlesnake(mesa.Agent):
 
     @current_behavior.setter
     def current_behavior(self, value):
-        self._current_behavior = value
+        if self.is_bruminating_today():
+            self._current_behavior = 'Brumation'
+        else:
+            self._current_behavior = value
 
     @property
     def current_microhabitat(self):
@@ -113,7 +116,10 @@ class Rattlesnake(mesa.Agent):
 
     @current_microhabitat.setter
     def current_microhabitat(self, value):
-        self._current_microhabitat = value
+        if self.is_bruminating_today():
+            self._current_microhabitat = 'Winter_Burrow'
+        else:
+            self._current_microhabitat = value
 
     @property
     def body_temperature(self):
