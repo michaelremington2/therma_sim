@@ -100,11 +100,16 @@ class EctothermBehavior(object):
     
     def set_utilities(self):
         '''Calculate utilities for behavior selection'''
-        db = self.thermal_accuracy_calculator()
-        metabolic_state, max_metabolic_state = self.get_metabolic_state_variables()
-        thermoregulate_utility = self.scale_value(db, self.snake.max_thermal_accuracy)
-        rest_utility = self.scale_value(metabolic_state, max_metabolic_state)
-        forage_utility = 1 - rest_utility
+        if self.model.hour in self.snake.active_hours:
+            db = self.thermal_accuracy_calculator()
+            metabolic_state, max_metabolic_state = self.get_metabolic_state_variables()
+            thermoregulate_utility = self.scale_value(db, self.snake.max_thermal_accuracy)
+            rest_utility = self.scale_value(metabolic_state, max_metabolic_state)
+            forage_utility = 1 - rest_utility
+        else:
+            rest_utility = 1
+            thermoregulate_utility = 0
+            forage_utility = 0
         return np.array([rest_utility, thermoregulate_utility, forage_utility])
     
     def set_behavioral_weights(self):
@@ -119,6 +124,7 @@ class EctothermBehavior(object):
         '''Foraging behavior logic with optimized functional response calculations'''
         self.snake.current_microhabitat = 'Open'
         self.snake.current_behavior = 'Forage'
+        self.snake.active = True
 
         predator_label = self.snake.species_name
         prey_label = self.model.interaction_map.get_prey_for_predator(predator_label=predator_label)[0]
@@ -170,10 +176,19 @@ class EctothermBehavior(object):
         '''Resting behavior'''
         self.snake.current_microhabitat = 'Burrow'
         self.snake.current_behavior = 'Rest'
+        self.snake.active = False
+
+    def bruminate(self):
+        '''overwintering behavior'''
+        self.snake.current_microhabitat = 'Winter_Burrow'
+        self.snake.current_behavior = 'Brumation'
+        self.snake.body_temperature = self.snake.brumation_temp
+        self.snake.active = False
 
     def thermoregulate(self):
         '''Thermoregulation behavior using ThermaNewt'''
         self.snake.current_behavior = 'Thermoregulate'
+        self.snake.active = True
         mh = self.thermoregulation_module.do_i_flip(
             t_body=self.snake.body_temperature,
             burrow_temp=self.snake.model.landscape.burrow_temperature,
@@ -194,5 +209,6 @@ class EctothermBehavior(object):
             'Rest': self.rest,
             'Thermoregulate': self.thermoregulate,
             'Forage': self.forage,
+            'Bruminate': self.bruminate
         }
         behavior_actions.get(behavior, lambda: ValueError(f"Unknown behavior: {behavior}"))()

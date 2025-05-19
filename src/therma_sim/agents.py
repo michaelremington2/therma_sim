@@ -9,6 +9,7 @@ import metabolism
 import behavior 
 import birth_death
 import json
+from scipy.stats import truncnorm
 
 
 # Rattlesnake temperature model
@@ -34,9 +35,10 @@ class Rattlesnake(mesa.Agent):
                                                              X1_mass=self.snake_config['X1_mass'],
                                                              X2_temp=self.snake_config['X2_temp'],
                                                              X3_const=self.snake_config['X3_const'])
-            self.mass = self.set_mass(body_size_range=self.snake_config['Body_sizes'])
+            self.mass = self.set_mass(body_size_config=self.snake_config['body_size_config'])
             self.max_age_steps = self.snake_config['max_age']*self.model.steps_per_year
             self.moore = self.snake_config['moore']
+            self.active_hours = self.snake_config['active_hours']
             self.brumation_period = self.get_brumination_period(file_path = self.snake_config['brumination']['file_path'])
             self.brumation_temp = self.snake_config['brumination']['temperature']
             self.hourly_survival_probability = hourly_survival_probability
@@ -81,7 +83,8 @@ class Rattlesnake(mesa.Agent):
         self.behavior_history = []
         self.activity_coefficients = {'Rest':1,
                                       'Thermoregulate':2,
-                                      'Forage':2}
+                                      'Forage':2,
+                                      'Brumation':1}
 
         # Microhabitat
         self._current_microhabitat = ''
@@ -206,6 +209,9 @@ class Rattlesnake(mesa.Agent):
         ]
 
     def is_bruminating_today(self):
+        # print((self.model.month, self.model.day) in self.brumination_period)
+        # print(f'Brumination Period: {self.brumination_period}')
+        # print(f'Current Date: {(self.model.month, self.model.day)}')
         return (self.model.month, self.model.day) in self.brumination_period
 
 
@@ -255,6 +261,7 @@ class Rattlesnake(mesa.Agent):
             self.current_behavior,
             self.current_microhabitat,
             self.body_temperature,
+            self.mass,
             self.metabolism.metabolic_state,
             self.behavior_module.handling_time,
             self.behavior_module.attack_rate,
@@ -263,9 +270,36 @@ class Rattlesnake(mesa.Agent):
             self.behavior_module.prey_consumed
         ]
 
-    def set_mass(self, body_size_range):
-        mass = np.random.uniform(min(body_size_range), max(body_size_range))
+    def set_mass(self, body_size_config):
+        dist = body_size_config.get("distribution", "uniform")
+        mean = body_size_config.get("mean")
+        std = body_size_config.get("std")
+        min_val = body_size_config.get("min")
+        max_val = body_size_config.get("max")
+
+        if dist == "normal":
+            if None in (mean, std, min_val, max_val):
+                raise ValueError("Normal distribution requires mean, std, min, and max.")
+            
+            # Convert to standard normal bounds
+            a, b = (min_val - mean) / std, (max_val - mean) / std
+            mass = truncnorm.rvs(a, b, loc=mean, scale=std)
+
+        elif dist == "uniform":
+            if None in (min_val, max_val):
+                raise ValueError("Uniform distribution requires min and max.")
+            mass = np.random.uniform(min_val, max_val)
+
+        elif dist == "static":
+            if None in (min_val, max_val):
+                raise ValueError("Static distribution requires min and max.")
+            mass = np.random.choice(np.arange(min_val, max_val + 1))
+
+        else:
+            raise ValueError(f"Unsupported distribution: {dist}")
+
         return mass
+
 
     def generate_random_pos(self):
         hectare_size = 100
@@ -294,6 +328,8 @@ class Rattlesnake(mesa.Agent):
             t_env = self.model.landscape.burrow_temperature
         elif current_microhabitat=='Open':
             t_env = self.model.landscape.open_temperature
+        elif current_microhabitat=='Winter_Burrow':
+            t_env = self.brumation_temp
         # elif current_microhabitat=='Shrub':
         #     t_env = self.model.landscape.get_property_attribute(property_name='Shrub_Temp', pos=self.pos)
         else:
@@ -332,6 +368,7 @@ class Rattlesnake(mesa.Agent):
         '''
         self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
         if self.alive == False:
+            self.cause_of_death = 'Random'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
                             data=self.birth_death_module.report_data(event_type='Death'))
             self.model.remove_agent(self)

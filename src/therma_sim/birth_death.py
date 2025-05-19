@@ -169,7 +169,7 @@ class Birth_Death_Module(object):
                 self.thermal_critical_death()
                 return
         else:
-            self._ct_out_of_bounds_tcounter = 0
+            self.ct_out_of_bounds_tcounter = 0
             # Reset the counter if within bounds
  
     

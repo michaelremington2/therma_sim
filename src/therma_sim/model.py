@@ -71,6 +71,9 @@ class ThermaSim(mesa.Model):
         # Data Collector
         self.make_data_loggers()
 
+    ################################################
+    ### Properties
+    ################################################
 
     @property
     def hour(self):
@@ -132,8 +135,17 @@ class ThermaSim(mesa.Model):
     
     @property
     def active_krats_count(self):
-        active_krats = [krat for krat in self.schedule.agents_by_type[agents.KangarooRat].values() if krat.active and krat.alive]
-        return len(active_krats)
+        return sum(1 for krat in self.schedule.agents_by_type[agents.KangarooRat].values()
+                if krat.active and krat.alive)
+    
+    @property
+    def active_snakes_count(self):
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.active and snake.alive)
+
+    ###################################################
+    ### Methods
+    ###################################################
 
     def get_landscape_params(self, config):
         return config['Landscape_Parameters']
@@ -221,7 +233,7 @@ class ThermaSim(mesa.Model):
         '''
         rattlesnake_columns = [
             "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active","Alive", "Behavior", "Microhabitat",
-            "Body_Temperature", "Metabolic_State", "Handling_Time",
+            "Body_Temperature", "Mass", "Metabolic_State", "Handling_Time",
             "Attack_Rate", "Prey_Density", "Prey_Encountered", "Prey_Consumed"
         ]
         kangaroo_rat_columns = [
@@ -229,11 +241,12 @@ class ThermaSim(mesa.Model):
         ]
         model_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year",
-            "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'seed', 'sim_id'
+            "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active', 'seed', 'sim_id'
         ]
         birth_death_columns = [
-        "Time_Step", "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
-        "Death_Counter", "Alive", "Event_Type", "Cause_Of_Death", "Litter_Size"
+            "Time_Step", "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
+            "Death_Counter", "Alive", "Event_Type", "Cause_Of_Death", "Litter_Size",
+            "Body_Temperature", 'ct_min', 'ct_max'
         ]
         self.logger = dl.DataLogger()
         self.logger.make_data_reporter(file_name=self.output_folder+"Rattlesnake.csv", column_names = rattlesnake_columns)
@@ -251,21 +264,15 @@ class ThermaSim(mesa.Model):
             self.rattlesnake_pop_size,
             self.krats_pop_size,
             round(self.rattlesnake_mean_density, 2),
-            round(self.krat_mean_density, 2)
+            round(self.krat_mean_density, 2),
+            self.active_snakes_count,
+            self.active_krats_count
         ]
         if self.step_id == 0:
             return data + [self.seed, self.sim_id]
         else:
             return data + [None, None]
         
-        # Only include seed and sim-ID on the first step
-        if self.step_id == 0:
-            return data + [self.seed, self.sim_id]
-        else:
-            return data + [None, None]  # Use None to maintain column alignment
-
-
-
     def make_landscape(self, model):
         '''
         Helper function for intializing the landscape class
@@ -318,8 +325,8 @@ class ThermaSim(mesa.Model):
     
     def get_rattlesnake_params(self):
         params = self.config['Rattlesnake_Parameters']
-        if isinstance(params["Body_sizes"], dict):
-            params["Body_sizes"] = get_range(params["Body_sizes"])
+        # if isinstance(params["Body_sizes"], dict):
+        #     params["Body_sizes"] = get_range(params["Body_sizes"])
         if isinstance(params["initial_calories"], dict):
             params["initial_calories"] = get_range(params["initial_calories"])
         return params
@@ -553,6 +560,12 @@ class ThermaSim(mesa.Model):
         self.year = self.landscape.thermal_profile.select('year').row(self.step_id)[0]
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
+        # Krats
+        krat_shuffle = self.randomize_krats()
+        for krat in krat_shuffle:
+            #self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
+            krat.step()
+        krat_shuffle = self.randomize_krats()
         # Snakes
         snake_shuffle = self.randomize_snakes()
         for snake in snake_shuffle:
@@ -561,12 +574,7 @@ class ThermaSim(mesa.Model):
             snake.step()
             data = None
         snake_shuffle = self.randomize_snakes()
-        # Krats
-        krat_shuffle = self.randomize_krats()
-        for krat in krat_shuffle:
-            #self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
-            krat.step()
-        krat_shuffle = self.randomize_krats()
+
         
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
@@ -575,7 +583,7 @@ class ThermaSim(mesa.Model):
 
     def run_model(self, step_count=None):
         max_steps = len(self.landscape.thermal_profile)-1
-        print('Site: {}')
+        print(f'Site: {self.landscape.site_name}, Simulation ID: {self.sim_id}, Seed: {self.seed}')
         if step_count is None:
             step_count = max_steps
         elif max_steps <= step_count:
@@ -587,7 +595,7 @@ class ThermaSim(mesa.Model):
             self.step()
             end_time= time.time()
             execution_time = end_time - start_time
-            print(f'Step {self.step_id}, snakes {self.rattlesnake_pop_size}, krats {self.krats_pop_size}, time_to_run_step {execution_time}')
+            print(f'Step {self.step_id},hour {self.hour}, date {self.day}/{self.month}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {execution_time}')
 
             
 
