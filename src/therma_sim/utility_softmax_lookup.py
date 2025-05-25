@@ -3,7 +3,7 @@ import numpy as np
 from scipy.special import softmax
 
 class SoftmaxLookupTable:
-    def __init__(self, min_utility=0, max_utility=1, step=0.05, temperature=1.0, decimal_places=2):
+    def __init__(self, min_utility=0, max_utility=1, step=0.05, temperature=2.0, decimal_places=4):
         """
         Initializes the Softmax lookup table for behavioral preferences.
 

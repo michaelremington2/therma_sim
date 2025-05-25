@@ -2,24 +2,24 @@ name: therma_sim
 channels:
   - defaults
 dependencies:
-  - _libgcc_mutex=0.1
-  - _openmp_mutex=5.1
-  - bzip2=1.0.8
-  - ca-certificates=2023.08.22
-  - ld_impl_linux-64=2.38
-  - libffi=3.4.4
-  - libgcc-ng=11.2.0
-  - libgomp=11.2.0
-  - libstdcxx-ng=11.2.0
-  - libuuid=1.41.5
-  - ncurses=6.4
-  - openssl=3.0.10
-  - python=3.11.5
-  - readline=8.2
-  - sqlite=3.41.2
-  - tk=8.6.12
-  - xz=5.4.2
-  - zlib=1.2.13
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=5.1=1_gnu
+  - bzip2=1.0.8=h7b6447c_0
+  - ca-certificates=2023.08.22=h06a4308_0
+  - ld_impl_linux-64=2.38=h1181459_1
+  - libffi=3.4.4=h6a678d5_0
+  - libgcc-ng=11.2.0=h1234567_1
+  - libgomp=11.2.0=h1234567_1
+  - libstdcxx-ng=11.2.0=h1234567_1
+  - libuuid=1.41.5=h5eee18b_0
+  - ncurses=6.4=h6a678d5_0
+  - openssl=3.0.10=h7f8727e_2
+  - python=3.11.5=h955ad1f_0
+  - readline=8.2=h5eee18b_0
+  - sqlite=3.41.2=h5eee18b_0
+  - tk=8.6.12=h1ccaba5_0
+  - xz=5.4.2=h5eee18b_0
+  - zlib=1.2.13=h5eee18b_0
   - pip:
     - ace-tools==0.0
     - affine==2.4.0
@@ -49,9 +49,11 @@ dependencies:
     - cookiecutter==2.6.0
     - coverage==7.6.9
     - cycler==0.11.0
+    - cython==3.0.12
     - debugpy==1.8.0
     - decorator==5.1.1
     - defusedxml==0.7.1
+    - duckdb==1.2.1
     - et-xmlfile==2.0.0
     - executing==2.0.0
     - fastjsonschema==2.18.1
@@ -87,6 +89,7 @@ dependencies:
     - jupyterlab-server==2.25.0
     - jupyterlab-widgets==3.0.11
     - kiwisolver==1.4.5
+    - llvmlite==0.44.0
     - markdown==3.6
     - markdown-it-py==3.0.0
     - markupsafe==2.1.3
@@ -103,7 +106,8 @@ dependencies:
     - networkx==3.1
     - notebook==7.0.6
     - notebook-shim==0.2.3
-    - numpy==1.26.0
+    - numba==0.61.0
+    - numpy==1.26.4
     - openpyxl==3.1.5
     - overrides==7.4.0
     - packaging==23.1
@@ -113,7 +117,7 @@ dependencies:
     - pexpect==4.8.0
     - pickleshare==0.7.5
     - pillow==10.0.1
-    - pip==25.0.1
+    - pip==25.1.1
     - platformdirs==3.11.0
     - pluggy==1.5.0
     - polars==1.22.0
@@ -123,11 +127,13 @@ dependencies:
     - ptyprocess==0.7.0
     - pure-eval==0.2.2
     - py==1.11.0
+    - py4j==0.10.9.7
     - pycparser==2.21
     - pygments==2.16.1
     - pymdown-extensions==10.8.1
     - pyparsing==3.1.1
     - pyproj==3.6.1
+    - pyspark==3.5.5
     - pytest==6.2.5
     - pytest-pythonpath==0.7.4
     - python-dateutil==2.8.2

@@ -49,9 +49,11 @@ class Rattlesnake(mesa.Agent):
             self.t_pref_min = self.snake_config['t_pref_min']
             self.t_pref_max = self.snake_config['t_pref_max']
             self.t_opt = self.snake_config['t_opt']
-            self.ct_min = self.snake_config['volintary_ct']['min_temp']
-            self.ct_max = self.snake_config['volintary_ct']['max_temp']
-            self.ct_max_steps = self.snake_config['volintary_ct']['max_steps']
+            self.ct_min = self.snake_config['voluntary_ct']['min_temp']
+            self.ct_max = self.snake_config['voluntary_ct']['max_temp']
+            self.ct_max_steps = self.snake_config['voluntary_ct']['max_steps']
+            self.searching_behavior = self.snake_config['searching_behavior']
+            self.utility_temperature = self.snake_config['behavioral_utility_temperature']
             self.strike_performance_opt = self.snake_config['strike_performance_opt']
             self.max_thermal_accuracy = self.snake_config['max_thermal_accuracy'] #Replace this with an input value later
             # Birth Module
@@ -77,14 +79,12 @@ class Rattlesnake(mesa.Agent):
             self.max_age = 20
 
         # Behavioral profile
-        self.behaviors = ['Rest', 'Thermoregulate', 'Forage']
+        self.emergent_behaviors = ['Rest', 'Thermoregulate', 'Forage']
+        self.search_counter = 0
         self.behavior_module = behavior.EctothermBehavior(snake=self)
         self._current_behavior = ''
         self.behavior_history = []
-        self.activity_coefficients = {'Rest':1,
-                                      'Thermoregulate':2,
-                                      'Forage':2,
-                                      'Brumation':1}
+        self.activity_coefficients = self.snake_config['behavior_activity_coefficients']
 
         # Microhabitat
         self._current_microhabitat = ''
@@ -308,7 +308,7 @@ class Rattlesnake(mesa.Agent):
         self.pos = (x, y)
     
     def activate_snake(self):
-        if self.current_behavior in ['Thermoregulate', 'Forage']:
+        if self.current_behavior in ['Thermoregulate', 'Forage', 'Search']:
             self.active = True
         else:
             self.active = False

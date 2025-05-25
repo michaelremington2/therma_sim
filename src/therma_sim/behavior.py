@@ -1,6 +1,7 @@
 import numpy as np
 import ThermaNewt.sim_snake_tb as tn
 from numba import njit
+from scipy.special import softmax
 
 class EctothermBehavior(object):
     def __init__(self, snake):
@@ -112,13 +113,23 @@ class EctothermBehavior(object):
             forage_utility = 0
         return np.array([rest_utility, thermoregulate_utility, forage_utility])
     
-    def set_behavioral_weights(self):
+    def set_behavioral_weights(self,utl_temperature=1.0):
         utilities = self.set_utilities()
-        return self.model.softmax_lookup_table.get_probabilities(utilities)
+
+        if np.allclose(utilities, 0):
+            return np.ones_like(utilities) / len(utilities)  # Avoid divide-by-zero
+
+        masked_utilities = np.where(utilities == 0, -np.inf, utilities)
+        return softmax(masked_utilities / utl_temperature)
     
     def choose_behavior(self):
-        behavior_probabilities = self.set_behavioral_weights()
-        return np.random.choice(self.snake.behaviors, p=behavior_probabilities)
+        if self.snake.search_counter > 0:
+            #print(f"Search counter: {self.snake.search_counter}")
+            self.snake.search_counter -= 1
+            return 'Search'
+        else:
+            behavior_probabilities = self.set_behavioral_weights(utl_temperature=self.snake.utility_temperature)
+            return np.random.choice(self.snake.emergent_behaviors, p=behavior_probabilities)
 
     def forage(self):
         '''Foraging behavior logic with optimized functional response calculations'''
@@ -129,14 +140,14 @@ class EctothermBehavior(object):
         predator_label = self.snake.species_name
         prey_label = self.model.interaction_map.get_prey_for_predator(predator_label=predator_label)[0]
 
-        prey_min_density, prey_max_density = self.model.get_population_densities(species=prey_label)
-        active_prey_population_size = self.model.active_krats_count
-        prey_density = self.model.calc_local_population_density(
-            population_size=active_prey_population_size,
-            middle_range=prey_min_density,
-            max_density=prey_max_density
-        )
-        self.prey_density = prey_density
+        # prey_min_density, prey_max_density = self.model.get_population_densities(species=prey_label)
+        # active_prey_population_size = 
+        # prey_density = self.model.calc_local_population_density(
+        #     population_size=active_prey_population_size,
+        #     middle_range=prey_min_density,
+        #     max_density=prey_max_density
+        # )
+        self.prey_density = self.model.active_krats_count / self.model.landscape.landscape_size
 
         # Attack rate
         attack_range = self.model.interaction_map.get_attack_rate_range(predator=predator_label, prey=prey_label)
@@ -148,28 +159,33 @@ class EctothermBehavior(object):
 
         # Handling time
         handling_time_range = self.model.interaction_map.get_handling_time_range(predator=predator_label, prey=prey_label)
-        handling_time = np.random.uniform(handling_time_range['min'], handling_time_range['max'])
+        if handling_time_range['min']!=handling_time_range['max']:
+            handling_time = np.random.uniform(handling_time_range['min'], handling_time_range['max'])
+        else:
+            handling_time = handling_time_range['min']
         self.handling_time = handling_time
 
         # switched to using holling 2 function for just encounter rate 03/16`
-        expected_prey_encountered = self.holling_type_2(prey_density,  attack_rate, handling_time)
+        expected_prey_encountered = self.holling_type_2(self.prey_density,  attack_rate, handling_time)
         prey_encountered = int(np.random.poisson(expected_prey_encountered))
         self.prey_encountered = prey_encountered
         prey_consumed = 0 
-        if prey_encountered> 0 and active_prey_population_size >= prey_encountered:
-            for _ in range(prey_encountered):
-                strike_check = np.random.rand()
-                if strike_check < self.snake.strike_performance_opt:
-                    prey = self.model.get_active_krat()
-                    cal_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey.species_name)
-                    digestion_efficiency = self.model.interaction_map.get_digestion_efficiency(predator=predator_label, prey=prey.species_name)
-                    self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
-                    prey.alive = False
-                    prey.cause_of_death = 'predation'
-                    self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
-                                               data=prey.birth_death_module.report_data(event_type='Death'))
-                    self.model.remove_agent(prey)
-                    prey_consumed +=1
+        if prey_encountered> 0 and self.model.active_krats_count >= prey_encountered:
+#            for _ in range(prey_encountered): removing this with the assumption only one kangaroo rat encounter per time
+            strike_check = np.random.rand()
+            if strike_check < self.snake.strike_performance_opt:
+                prey = self.model.get_active_krat()
+                cal_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey.species_name)
+                digestion_efficiency = self.model.interaction_map.get_digestion_efficiency(predator=predator_label, prey=prey.species_name)
+                self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
+                prey.alive = False
+                prey.cause_of_death = 'predation'
+                self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
+                                            data=prey.birth_death_module.report_data(event_type='Death'))
+                if self.snake.searching_behavior:
+                    self.snake.search_counter = handling_time
+                self.model.remove_agent(prey)
+                prey_consumed +=1
         self.prey_consumed = prey_consumed
 
     def rest(self):
@@ -177,6 +193,12 @@ class EctothermBehavior(object):
         self.snake.current_microhabitat = 'Burrow'
         self.snake.current_behavior = 'Rest'
         self.snake.active = False
+
+    def search(self):
+        '''looking for a prey item that has been hit behavior'''
+        self.snake.current_microhabitat = 'Open'
+        self.snake.current_behavior = 'Search'
+        self.snake.active = True
 
     def bruminate(self):
         '''overwintering behavior'''
@@ -204,11 +226,16 @@ class EctothermBehavior(object):
     def step(self):
         '''Handles picking and executing behavior functions'''
         self.reset_log_metrics()
-        behavior = self.choose_behavior()
-        behavior_actions = {
-            'Rest': self.rest,
-            'Thermoregulate': self.thermoregulate,
-            'Forage': self.forage,
-            'Bruminate': self.bruminate
-        }
-        behavior_actions.get(behavior, lambda: ValueError(f"Unknown behavior: {behavior}"))()
+        if self.snake.search_counter > 0:
+            self.snake.search_counter -= 1
+            self.search()
+            return
+        else:
+            behavior = self.choose_behavior()
+            behavior_actions = {
+                'Rest': self.rest,
+                'Thermoregulate': self.thermoregulate,
+                'Forage': self.forage,
+                'Bruminate': self.bruminate
+            }
+            behavior_actions.get(behavior, lambda: ValueError(f"Unknown behavior: {behavior}"))()
