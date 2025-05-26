@@ -13,10 +13,10 @@ class Birth_Death_Module(object):
         self.model = model
         self.agent = agent
         self.death_hazard_rate = death_hazard_rate
-        self.death_counter = self.bounded_exponential_wait_time(hazard_rate=self.death_hazard_rate, 
+        self.death_counter = max(self.bounded_exponential_wait_time(hazard_rate=self.death_hazard_rate, 
                                                         steps_per_year=self.model.steps_per_year,
                                                         min_steps = 0,
-                                                        max_steps = self.agent.max_age_steps)
+                                                        max_steps = self.agent.max_age_steps) - self.agent.age,0)
         # Death parameters
         # if initial_pop and self.agent.age < self.death_counter:
         #     self.death_counter = self.death_counter - self.agent.age
@@ -33,11 +33,11 @@ class Birth_Death_Module(object):
             ## Hidden variables for litter size distribution
             self.a = (self.lower_bound_litter_size - self.mean_litter_size) / self.std_litter_size
             self.b = (self.upper_bound_litter_size - self.mean_litter_size) / self.std_litter_size
-            self.birth_counter = self.bounded_exponential_wait_time(
+            self.birth_counter = max(self.bounded_exponential_wait_time(
                 hazard_rate=self.hazard_rate_birth, 
                 steps_per_year=self.model.steps_per_year,
                 min_steps=self.agent.reproductive_age_steps
-            )
+            ) - self.agent.age,0)
         self._ct_out_of_bounds_tcounter = 0
 
     @property
@@ -64,7 +64,7 @@ class Birth_Death_Module(object):
             self._ct_out_of_bounds_tcounter = 0
         # Ensure the counter does not exceed the maximum value
         if self._ct_out_of_bounds_tcounter > self.agent.ct_max_steps:
-            return self.agent.ct_max_steps 
+            self._ct_out_of_bounds_tcounter = self.agent.ct_max_steps
     
     def bounded_exponential_wait_time(self, hazard_rate, steps_per_year, min_steps, max_steps=None):
         """

@@ -539,7 +539,7 @@ class ThermaSim(mesa.Model):
         snakes = self.rattlesnake_pop_size
         krats = self.krats_pop_size
         total_agents = snakes + krats
-        if total_agents > 20000:
+        if total_agents > 15000:
            self.running=False
         elif krats==0:
             self.running=False
@@ -552,7 +552,6 @@ class ThermaSim(mesa.Model):
         '''
         Main model step function used to run one step of the model.
         '''
-        self.end_sim_early_check()
         self.hour = self.landscape.thermal_profile.select("hour").row(self.step_id)[0]
 
         self.day = self.landscape.thermal_profile.select('day').row(self.step_id)[0]
@@ -579,6 +578,7 @@ class ThermaSim(mesa.Model):
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
         self.schedule.step()
+        self.end_sim_early_check()
 
 
     def run_model(self, step_count=None):
@@ -593,6 +593,9 @@ class ThermaSim(mesa.Model):
         for i in range(step_count):
             start_time = time.time()
             self.step()
+            if self.running is False:
+                print(f'Simulation ended at step {self.step_id} with {self.rattlesnake_pop_size} snakes and {self.krats_pop_size} krats.')
+                break
             end_time= time.time()
             execution_time = end_time - start_time
             print(f'Step {self.step_id},hour {self.hour}, date {self.day}/{self.month}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {execution_time}')
