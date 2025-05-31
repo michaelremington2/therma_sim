@@ -16,6 +16,7 @@ import uuid
 import time
 import data_logger as dl
 from numba import njit
+import os
 
 warnings.filterwarnings("ignore")
 
@@ -52,8 +53,12 @@ class ThermaSim(mesa.Model):
         self._initial_mean_densities = {}  # backing dict for initial densities
         if seed is not None:
             np.random.seed(self.seed)
-        self.output_folder = output_folder or ''
-        
+        if output_folder is not None:
+            os.makedirs(output_folder, exist_ok=True)
+            self.output_folder = output_folder
+        else:
+            self.output_folder = ''
+                
         
         # Schedular 
         # Random activation, random by type Simultanious, staged
@@ -539,7 +544,7 @@ class ThermaSim(mesa.Model):
         snakes = self.rattlesnake_pop_size
         krats = self.krats_pop_size
         total_agents = snakes + krats
-        if total_agents > 15000:
+        if total_agents > 10000:
            self.running=False
         elif krats==0:
             self.running=False
