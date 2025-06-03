@@ -13,13 +13,10 @@ class Birth_Death_Module(object):
         self.model = model
         self.agent = agent
         self.death_hazard_rate = death_hazard_rate
-        self.death_counter = max(self.bounded_exponential_wait_time(hazard_rate=self.death_hazard_rate, 
-                                                        steps_per_year=self.model.steps_per_year,
-                                                        min_steps = 0,
-                                                        max_steps = self.agent.max_age_steps) - self.agent.age,0)
-        # Death parameters
-        # if initial_pop and self.agent.age < self.death_counter:
-        #     self.death_counter = self.death_counter - self.agent.age
+        self.death_counter = self.bounded_exponential_wait_time(hazard_rate=self.death_hazard_rate, 
+                                                                steps_per_year=self.model.steps_per_year,
+                                                                min_steps = 0,
+                                                                max_steps = self.agent.max_age_steps)
         # Birth parameters
         self.birth_counter = np.inf
         if self.agent.sex=='Female':
