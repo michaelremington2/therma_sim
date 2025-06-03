@@ -33,11 +33,21 @@ class Birth_Death_Module(object):
             ## Hidden variables for litter size distribution
             self.a = (self.lower_bound_litter_size - self.mean_litter_size) / self.std_litter_size
             self.b = (self.upper_bound_litter_size - self.mean_litter_size) / self.std_litter_size
-            self.birth_counter = max(self.bounded_exponential_wait_time(
-                hazard_rate=self.hazard_rate_birth, 
-                steps_per_year=self.model.steps_per_year,
-                min_steps=self.agent.reproductive_age_steps
-            ) - self.agent.age,0)
+            if self.agent.age > self.agent.reproductive_age_steps:
+                self.birth_counter = self.bounded_exponential_wait_time(
+                    hazard_rate=self.hazard_rate_birth, 
+                    steps_per_year=self.model.steps_per_year,
+                    min_steps=0
+                )
+            else:
+                self.birth_counter = self.bounded_exponential_wait_time(
+                    hazard_rate=self.hazard_rate_birth, 
+                    steps_per_year=self.model.steps_per_year,
+                    min_steps=self.agent.reproductive_age_steps
+                )
+        else:
+            self.birth_counter = np.inf
+
         self._ct_out_of_bounds_tcounter = 0
 
     @property
