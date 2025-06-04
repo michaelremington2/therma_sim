@@ -15,27 +15,29 @@ from scipy.stats import truncnorm
 # Rattlesnake temperature model
 # https://journals.biologists.com/jeb/article/223/14/jeb223859/224523/The-effects-of-temperature-on-the-defensive
 
+
+
 class Rattlesnake(mesa.Agent):
     '''
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, mass, initial_calories,  hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.initial_pop = initial_pop
         self.pos = initial_pos
         self.snake_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
         self.age = age
+        self.mass = mass
         if config is not None:
             self.metabolism = metabolism.EctothermMetabolism(org=self,
                                                              model=self.model,
-                                                             initial_metabolic_state=self.snake_config['initial_calories'],
+                                                             initial_metabolic_state=initial_calories,
                                                              max_meals = self.snake_config['max_meals'],
                                                              X1_mass=self.snake_config['X1_mass'],
                                                              X2_temp=self.snake_config['X2_temp'],
                                                              X3_const=self.snake_config['X3_const'])
-            self.mass = self.set_mass(body_size_config=self.snake_config['body_size_config'])
             self.max_age_steps = self.snake_config['max_age']*self.model.steps_per_year
             self.moore = self.snake_config['moore']
             self.active_hours = self.snake_config['active_hours']
@@ -420,26 +422,26 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, age=0, initial_pop=False, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, mass, hourly_survival_probability,  age=0, initial_pop=False, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.initial_pop = initial_pop
         self.pos = initial_pos
         self.krat_config = config
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
         self.age = age
+        self.mass = mass
+        self.hourly_survival_probability = hourly_survival_probability
         if self.krat_config is not None:
             self.active_hours = self.krat_config['active_hours']
             self.energy_budget = self.krat_config["energy_budget"]
-            self.mass = self.set_mass(body_size_range=self.krat_config['Body_sizes'])
             self.max_age_steps = self.krat_config['max_age']*self.model.steps_per_year
             self.moore = self.krat_config['moore']
-            self.hourly_survival_probability = self.bernouli_trial_hourly(annual_probability=self.krat_config['annual_survival_probability'])
             self.reproductive_age_steps = int(self.krat_config['reproductive_age_years']*self.model.steps_per_year)
             self.birth_death_module = self.initiate_birth_death_module(birth_config=self.krat_config['birth_death_module'], initial_pop=self.initial_pop)
         else:
             self.active_hours = [0, 1, 2, 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
             self.energy_budget = len(self.active_hours)
-            self.mass = 10
+            self.mass = 60
             self.max_age = 6
             self.moore = True
             self.hourly_survival_probability = 1
@@ -533,24 +535,13 @@ class KangarooRat(mesa.Agent):
         x = np.random.uniform(0, hectare_size)
         y = np.random.uniform(0, hectare_size)
         self.pos = (x, y)
-
-    def set_mass(self, body_size_range):
-        mass = np.random.uniform(min(body_size_range), max(body_size_range))
-        return mass
-    
+  
     def activate_krat(self, hour):
         activity_budget = np.random.choice(self.active_hours, self.energy_budget, replace=False)
         if hour in activity_budget:
             self.active = True
         else:
             self.active = False
-
-    def bernouli_trial_hourly(self, annual_probability):
-        '''
-        Used to calculate hourly probability of survival
-        '''
-        P_H = annual_probability ** (1 / self.model.steps_per_year)
-        return P_H
 
     def random_death(self):
         '''

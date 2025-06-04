@@ -69,7 +69,7 @@ class ThermaSim(mesa.Model):
         self.steps_per_year = self.landscape.count_steps_in_one_year()
         self.steps_per_month = self.steps_per_year / 12
         self.interaction_map = self.make_interaction_module(model=self)
-        self.initiate_species_map()
+        #self.initiate_species_map()
         self.softmax_lookup_table = usl.SoftmaxLookupTable()
         ## Intialize agents
         self.make_initial_population()
@@ -157,13 +157,6 @@ class ThermaSim(mesa.Model):
 
     def get_rattlesnake_params(self):
         params = self.config['Rattlesnake_Parameters']
-        
-        # Convert stored dictionaries into Python range objects
-        if isinstance(params["Body_sizes"], dict):
-            params["Body_sizes"] = get_range(params["Body_sizes"])
-        if isinstance(params["initial_calories"], dict):
-            params["initial_calories"] = get_range(params["initial_calories"])
-
         return params
     
     def get_interaction_params(self, config):
@@ -328,118 +321,57 @@ class ThermaSim(mesa.Model):
         new_local_density = ThermaSim.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
         return new_local_density
     
-    def get_rattlesnake_params(self):
-        params = self.config['Rattlesnake_Parameters']
-        # if isinstance(params["Body_sizes"], dict):
-        #     params["Body_sizes"] = get_range(params["Body_sizes"])
-        if isinstance(params["initial_calories"], dict):
-            params["initial_calories"] = get_range(params["initial_calories"])
-        return params
     
     def get_krat_params(self):
         params = self.config['KangarooRat_Parameters']
-        if isinstance(params["Body_sizes"], dict):
-            params["Body_sizes"] = get_range(params["Body_sizes"])
         return params
 
-    def initiate_species_map(self):
-        """
-        Initializes a species map with class references, input parameters, 
-        and precomputed static variables, including hourly survival probabilities.
-
-        The hourly survival rate is computed from the annual survival rate using 
-        a Bernoulli process.
-        """
-        self.species_map = {
-            "KangarooRat": {
-                "class_name": agents.KangarooRat,
-                "input_parameters": self.get_krat_params,  # Precomputed parameters
-                "static_variables": {}
-            },
-            "Rattlesnake": {
-                "class_name": agents.Rattlesnake,
-                "input_parameters": self.get_rattlesnake_params,  # Precomputed parameters
-                "static_variables": {}
-            }
-        }
-        for species, values in self.species_map.items():
-            params = values["input_parameters"]()
-            if "annual_survival_probability" in params:
-                hourly_survival_probability = ThermaSim.bernouli_trial_hourly(
-                                                annual_probability=params["annual_survival_probability"],
-                                                steps_per_year=self.steps_per_year
-                                            )
-            else:
-                raise ValueError(f"Missing 'annual_survival_probability' for {species}")
-            # Store precomputed values
-            values["static_variables"]["hourly_survival_probability"] = hourly_survival_probability
-
-
-    def set_static_variable(self, species, variable_name, value, overwrite=False):
-        """
-        Sets a static variable for a given species in the species map.
-
-        Args:
-            species (str): The name of the species (e.g., "Rattlesnake", "KangarooRat").
-            variable_name (str): The name of the static variable.
-            value (any): The value to assign to the static variable.
-            overwrite (bool): If False (default), prevents overwriting an existing variable.
-
-        Raises:
-            ValueError: If the species does not exist in the species map.
-        """
-        if species not in self.species_map:
-            raise ValueError(f"Species '{species}' not found in species map.")
-
-        static_vars = self.species_map[species]["static_variables"]
-
-        # Only set the variable if it doesn't exist OR if overwrite=True
-        if overwrite or variable_name not in static_vars:
-            static_vars[variable_name] = value
-
-    def get_static_variable(self, species, variable_name, default=None):
-        """
-        Retrieves a static variable for a given species in the species map.
-
-        Args:
-            species (str): The name of the species (e.g., "Rattlesnake", "KangarooRat").
-            variable_name (str): The name of the static variable to retrieve.
-            default (any, optional): A default value to return if the variable does not exist. 
-                                    Defaults to None.
-
-        Returns:
-            any: The value of the static variable if found, else the default value.
-
-        Raises:
-            ValueError: If the species does not exist in the species map.
-        """
-        if species not in self.species_map:
-            raise ValueError(f"Species '{species}' not found in species map.")
-
-        return self.species_map[species]["static_variables"].get(variable_name, default)
-
-        
-    ## Intialize populations and births
     def give_birth(self, species_name, pos=None, parent=None, initial_pop=False):
         """
-        Helper function - Adds new agents to the landscape
+        Adds new agents to the simulation with random body size and optional position.
         """
-        if species_name not in self.species_map:
-            raise ValueError(f"Class for species: {species_name} does not exist")
-
-        agent_info = self.species_map[species_name]
-        agent_params = agent_info["input_parameters"]()
-        agent_class = agent_info['class_name']
-        if initial_pop:
-            max_age = agent_params['max_age']
-            rand_age = int(np.random.uniform(0,max_age*self.steps_per_year))
-            agent = agent_class(unique_id=self.next_id(), model=self, config=agent_params, age = rand_age, initial_pop=initial_pop)
+        if species_name == "KangarooRat":
+            agent_class = agents.KangarooRat
+            params = self.get_krat_params()
+        elif species_name == "Rattlesnake":
+            agent_class = agents.Rattlesnake
+            params = self.get_rattlesnake_params()
         else:
-            agent = agent_class(unique_id=self.next_id(), model=self, age=0, config=agent_params)
+            raise ValueError(f"Unknown species: {species_name}")
+        # Set range variables
+        if isinstance(params.get("Body_sizes"), dict):
+            mass = np.random.choice(range(params["Body_sizes"]['start'], params["Body_sizes"]['stop'], params["Body_sizes"]['step']))
+        else:
+            mass = params["Body_sizes"]
+                                
+        if isinstance(params.get("initial_calories"), dict):
+            initial_calories = np.random.choice(range(params["initial_calories"]['start'], params["initial_calories"]['stop'], params["initial_calories"]['step']))
+        else:
+            initial_calories = params["Body_sizes"]
+
+        if "annual_survival_probability" in params:
+            hourly_survival_probaility = ThermaSim.bernouli_trial_hourly(
+                annual_probability=params["annual_survival_probability"],
+                steps_per_year=self.steps_per_year
+            )
+        age = int(np.random.uniform(0, params['max_age'] * self.steps_per_year)) if initial_pop else 0
+
+        agent = agent_class(
+            unique_id=self.next_id(),
+            model=self,
+            age=age,
+            mass=mass,
+            initial_calories=initial_calories,
+            hourly_survival_probability=hourly_survival_probaility,
+            config=params,
+            initial_pop=initial_pop
+        )
 
         if pos is not None:
             self.place_agent(agent, pos)
+
         self.schedule.add(agent)
+
 
 
     def initialize_populations_density(self, species, min_density, max_density, spatially_explicit=False):
