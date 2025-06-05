@@ -52,7 +52,7 @@ class Birth_Death_Module(object):
         """
         Property to get the current value of the critical temperature out of bounds counter.
         """
-        if self.agent.is_bruminating_today:
+        if self.agent.is_bruminating_today():
             return 0
         else:
             return self._ct_out_of_bounds_tcounter
