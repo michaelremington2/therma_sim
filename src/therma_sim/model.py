@@ -3,7 +3,6 @@ import mesa
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-import networkx as nx
 import pandas as pd
 import warnings
 import logging
@@ -17,7 +16,7 @@ import time
 import data_logger as dl
 from numba import njit
 import os
-
+from scipy.stats import truncnorm
 warnings.filterwarnings("ignore")
 
 def get_range(range_dict):
@@ -325,6 +324,19 @@ class ThermaSim(mesa.Model):
     def get_krat_params(self):
         params = self.config['KangarooRat_Parameters']
         return params
+    
+    def set_mass(self, body_sizes_config):
+        distribution = body_sizes_config['distribution']
+        if distribution == 'uniform':
+            mass = np.random.choice(range(body_sizes_config['start'], body_sizes_config['stop'], body_sizes_config['step']))
+        elif distribution == 'normal':
+            mean = body_sizes_config['mean']
+            std = body_sizes_config['std']
+            a, b = (body_sizes_config['min'] - mean) / std, (body_sizes_config['max'] - mean) / std
+            mass = truncnorm.rvs(a, b, loc=mean, scale=std)
+        else:
+            raise ValueError('No mass distribution given')
+        return mass
 
     def give_birth(self, species_name, pos=None, parent=None, initial_pop=False):
         """
@@ -339,15 +351,15 @@ class ThermaSim(mesa.Model):
         else:
             raise ValueError(f"Unknown species: {species_name}")
         # Set range variables
-        if isinstance(params.get("Body_sizes"), dict):
-            mass = np.random.choice(range(params["Body_sizes"]['start'], params["Body_sizes"]['stop'], params["Body_sizes"]['step']))
+        if isinstance(params.get("body_size_config"), dict):
+            mass = self.set_mass(params["body_size_config"])
         else:
-            mass = params["Body_sizes"]
+            mass = params["body_size_config"]
                                 
-        if isinstance(params.get("initial_calories"), dict):
-            initial_calories = np.random.choice(range(params["initial_calories"]['start'], params["initial_calories"]['stop'], params["initial_calories"]['step']))
-        else:
-            initial_calories = params["Body_sizes"]
+        # if isinstance(params.get("initial_calories"), dict):
+        #     initial_calories = np.random.choice(range(params["initial_calories"]['start'], params["initial_calories"]['stop'], params["initial_calories"]['step']))
+        # else:
+        #     initial_calories = params["initial_calories"]
 
         if "annual_survival_probability" in params:
             hourly_survival_probaility = ThermaSim.bernouli_trial_hourly(
@@ -361,7 +373,6 @@ class ThermaSim(mesa.Model):
             model=self,
             age=age,
             mass=mass,
-            initial_calories=initial_calories,
             hourly_survival_probability=hourly_survival_probaility,
             config=params,
             initial_pop=initial_pop

@@ -9,7 +9,7 @@ import metabolism
 import behavior 
 import birth_death
 import json
-from scipy.stats import truncnorm
+
 
 
 # Rattlesnake temperature model
@@ -22,7 +22,7 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, mass, initial_calories,  hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, mass,  hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None):
         super().__init__(unique_id, model)
         self.initial_pop = initial_pop
         self.pos = initial_pos
@@ -33,7 +33,7 @@ class Rattlesnake(mesa.Agent):
         if config is not None:
             self.metabolism = metabolism.EctothermMetabolism(org=self,
                                                              model=self.model,
-                                                             initial_metabolic_state=initial_calories,
+                                                             initial_metabolic_state=self.snake_config['initial_calories'],
                                                              max_meals = self.snake_config['max_meals'],
                                                              X1_mass=self.snake_config['X1_mass'],
                                                              X2_temp=self.snake_config['X2_temp'],
@@ -227,13 +227,8 @@ class Rattlesnake(mesa.Agent):
         Returns:
             int: The reproductive age in simulation steps.
         """
-        existing_value = self.model.get_static_variable(species=self.species_name, variable_name='reproductive_age_steps')
-
-        if existing_value is None:
-            reproductive_age_steps = reproductive_age_years * self.model.steps_per_year
-            self.model.set_static_variable(species=self.species_name, variable_name='reproductive_age_steps', value=reproductive_age_steps)
-            return reproductive_age_steps  
-        return existing_value
+        reproductive_age_steps = reproductive_age_years * self.model.steps_per_year
+        return reproductive_age_steps 
 
 
     def initiate_birth_death_module(self, birth_config, initial_pop):
@@ -272,33 +267,33 @@ class Rattlesnake(mesa.Agent):
             self.behavior_module.prey_consumed
         ]
 
-    def set_mass(self, body_size_config):
-        dist = body_size_config.get("distribution", "uniform")
-        mean = body_size_config.get("mean")
-        std = body_size_config.get("std")
-        min_val = body_size_config.get("min")
-        max_val = body_size_config.get("max")
+    # def set_mass(self, body_size_config):
+    #     dist = body_size_config.get("distribution", "uniform")
+    #     mean = body_size_config.get("mean")
+    #     std = body_size_config.get("std")
+    #     min_val = body_size_config.get("min")
+    #     max_val = body_size_config.get("max")
 
-        if dist == "normal":
-            if None in (mean, std, min_val, max_val):
-                raise ValueError("Normal distribution requires mean, std, min, and max.")
+    #     if dist == "normal":
+    #         if None in (mean, std, min_val, max_val):
+    #             raise ValueError("Normal distribution requires mean, std, min, and max.")
             
-            # Convert to standard normal bounds
-            a, b = (min_val - mean) / std, (max_val - mean) / std
-            mass = truncnorm.rvs(a, b, loc=mean, scale=std)
+    #         # Convert to standard normal bounds
+    #         a, b = (min_val - mean) / std, (max_val - mean) / std
+    #         mass = truncnorm.rvs(a, b, loc=mean, scale=std)
 
-        elif dist == "uniform":
-            if None in (min_val, max_val):
-                raise ValueError("Uniform distribution requires min and max.")
-            mass = np.random.uniform(min_val, max_val)
+    #     elif dist == "uniform":
+    #         if None in (min_val, max_val):
+    #             raise ValueError("Uniform distribution requires min and max.")
+    #         mass = np.random.uniform(min_val, max_val)
 
-        elif dist == "static":
-            if None in (min_val, max_val):
-                raise ValueError("Static distribution requires min and max.")
-            mass = np.random.choice(np.arange(min_val, max_val + 1))
+    #     elif dist == "static":
+    #         if None in (min_val, max_val):
+    #             raise ValueError("Static distribution requires min and max.")
+    #         mass = np.random.choice(np.arange(min_val, max_val + 1))
 
-        else:
-            raise ValueError(f"Unsupported distribution: {dist}")
+    #     else:
+    #         raise ValueError(f"Unsupported distribution: {dist}")
 
         return mass
 
@@ -319,10 +314,7 @@ class Rattlesnake(mesa.Agent):
         return self.activity_coefficients[self.current_behavior]
 
     def cooling_eq_k(self, k, t_body, t_env, delta_t):
-        exp_decay = self.model.get_static_variable(species=self.species_name, variable_name='exp_decay')
-        if exp_decay is None:
-            exp_decay = math.exp(-k*delta_t)
-            self.model.set_static_variable(species=self.species_name, variable_name='exp_decay', value=exp_decay)
+        exp_decay = math.exp(-k*delta_t)
         return t_env+(t_body-t_env)*exp_decay
     
     def get_t_env(self, current_microhabitat):

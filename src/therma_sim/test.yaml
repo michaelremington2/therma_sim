@@ -74,7 +74,8 @@ Rattlesnake_Parameters:
   moore: false
 
 KangarooRat_Parameters:
-  Body_sizes:
+  body_size_config:
+    distribution: 'uniform'
     start: 60
     stop: 70
     step: 1
