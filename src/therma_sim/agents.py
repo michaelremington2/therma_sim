@@ -110,10 +110,7 @@ class Rattlesnake(mesa.Agent):
 
     @current_behavior.setter
     def current_behavior(self, value):
-        if self.is_bruminating_today():
-            self._current_behavior = 'Brumation'
-        else:
-            self._current_behavior = value
+        self._current_behavior = value
 
     @property
     def current_microhabitat(self):
@@ -121,10 +118,7 @@ class Rattlesnake(mesa.Agent):
 
     @current_microhabitat.setter
     def current_microhabitat(self, value):
-        if self.is_bruminating_today():
-            self._current_microhabitat = 'Winter_Burrow'
-        else:
-            self._current_microhabitat = value
+        self._current_microhabitat = value
 
     @property
     def body_temperature(self):
@@ -205,7 +199,7 @@ class Rattlesnake(mesa.Agent):
             raise ValueError(
                 f"Site name in JSON file '{site_name}' does not match model site name '{self.model.landscape.site_name}'."
             )
-        self.brumination_period = [
+        return [
             (int(date.split('-')[0]), int(date.split('-')[1]))
             for date in date_strs
         ]

@@ -98,38 +98,6 @@ class EctothermBehavior(object):
         if strike_success>1:
             raise(ValueError("Strike success is a probability that cant exceed 1"))
         return ((strike_success * attack_rate) * prey_density) / (1 + (strike_success * attack_rate) * handling_time * prey_density)
-    
-    def set_utilities(self):
-        '''Calculate utilities for behavior selection'''
-        if self.model.hour in self.snake.active_hours:
-            db = self.thermal_accuracy_calculator()
-            metabolic_state, max_metabolic_state = self.get_metabolic_state_variables()
-            thermoregulate_utility = self.scale_value(db, self.snake.max_thermal_accuracy)
-            rest_utility = self.scale_value(metabolic_state, max_metabolic_state)
-            forage_utility = 1 - rest_utility
-        else:
-            rest_utility = 1
-            thermoregulate_utility = 0
-            forage_utility = 0
-        return np.array([rest_utility, thermoregulate_utility, forage_utility])
-    
-    def set_behavioral_weights(self,utl_temperature=1.0):
-        utilities = self.set_utilities()
-
-        if np.allclose(utilities, 0):
-            return np.ones_like(utilities) / len(utilities)  # Avoid divide-by-zero
-
-        masked_utilities = np.where(utilities == 0, -np.inf, utilities)
-        return softmax(masked_utilities / utl_temperature)
-    
-    def choose_behavior(self):
-        if self.snake.search_counter > 0:
-            #print(f"Search counter: {self.snake.search_counter}")
-            self.snake.search_counter -= 1
-            return 'Search'
-        else:
-            behavior_probabilities = self.set_behavioral_weights(utl_temperature=self.snake.utility_temperature)
-            return np.random.choice(self.snake.emergent_behaviors, p=behavior_probabilities)
 
     def forage(self):
         '''Foraging behavior logic with optimized functional response calculations'''
@@ -222,11 +190,39 @@ class EctothermBehavior(object):
             self.snake.current_microhabitat = 'Open'
         else:
             raise ValueError(f"Microhabitat: {mh} has not been programmed into the system")
+        
+    # Behavioral Algorithm
+    def set_utilities(self):
+        '''Calculate utilities for behavior selection'''
+        if self.model.hour in self.snake.active_hours:
+            db = self.thermal_accuracy_calculator()
+            metabolic_state, max_metabolic_state = self.get_metabolic_state_variables()
+            thermoregulate_utility = self.scale_value(db, self.snake.max_thermal_accuracy)
+            rest_utility = self.scale_value(metabolic_state, max_metabolic_state)
+            forage_utility = 1 - rest_utility
+        else:
+            rest_utility = 1
+            thermoregulate_utility = 0
+            forage_utility = 0
+        return np.array([rest_utility, thermoregulate_utility, forage_utility])
+    
+    def set_behavioral_weights(self,utl_temperature=1.0):
+        utilities = self.set_utilities()
+        if np.allclose(utilities, 0):
+            return np.ones_like(utilities) / len(utilities)  # Avoid divide-by-zero
+        masked_utilities = np.where(utilities == 0, -np.inf, utilities)
+        return softmax(masked_utilities / utl_temperature)
+        
+    def choose_behavior(self):
+        behavior_probabilities = self.set_behavioral_weights(utl_temperature=self.snake.utility_temperature)
+        return np.random.choice(self.snake.emergent_behaviors, p=behavior_probabilities)
 
     def step(self):
         '''Handles picking and executing behavior functions'''
         self.reset_log_metrics()
-        if self.snake.search_counter > 0:
+        if self.snake.is_bruminating_today():
+            self.bruminate()
+        elif self.snake.search_counter > 0:
             self.snake.search_counter -= 1
             self.search()
             return
@@ -236,6 +232,5 @@ class EctothermBehavior(object):
                 'Rest': self.rest,
                 'Thermoregulate': self.thermoregulate,
                 'Forage': self.forage,
-                'Bruminate': self.bruminate
             }
             behavior_actions.get(behavior, lambda: ValueError(f"Unknown behavior: {behavior}"))()
