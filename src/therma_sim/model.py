@@ -542,11 +542,11 @@ class ThermaSim(mesa.Model):
             start_time = time.time()
             self.step()
             if self.running is False:
-                print(f'Simulation ended at step {self.step_id} with {self.rattlesnake_pop_size} snakes and {self.krats_pop_size} krats.')
+                print(f'Simulation {self.sim_id} ended at step {self.step_id} with {self.rattlesnake_pop_size} snakes and {self.krats_pop_size} krats.')
                 break
             end_time= time.time()
             execution_time = end_time - start_time
-            print(f'Step {self.step_id},hour {self.hour}, date {self.day}/{self.month}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {execution_time}')
+            print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {execution_time}')
 
             
 

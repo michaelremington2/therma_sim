@@ -85,7 +85,6 @@ class Rattlesnake(mesa.Agent):
         self.search_counter = 0
         self.behavior_module = behavior.EctothermBehavior(snake=self)
         self._current_behavior = ''
-        self.behavior_history = []
         self.activity_coefficients = self.snake_config['behavior_activity_coefficients']
 
         # Microhabitat
@@ -208,7 +207,7 @@ class Rattlesnake(mesa.Agent):
         # print((self.model.month, self.model.day) in self.brumination_period)
         # print(f'Brumination Period: {self.brumination_period}')
         # print(f'Current Date: {(self.model.month, self.model.day)}')
-        return (self.model.month, self.model.day) in self.brumination_period
+        return (self.model.month, self.model.day) in self.brumation_period
 
 
     def set_reproductive_age_steps(self, reproductive_age_years):

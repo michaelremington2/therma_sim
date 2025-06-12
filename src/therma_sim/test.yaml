@@ -4,7 +4,7 @@ Landscape_Parameters:
   ENV_Temperature_Cols:
     Open: 'Open_mean_Temperature'
     Burrow: 'Burrow_mean_Temperature'
-  Width: 15
+  Width: 20
   Height: 15
   torus: false
   moore: false
@@ -51,7 +51,7 @@ Rattlesnake_Parameters:
   X1_mass: 0.93
   X2_temp: 0.044
   X3_const: -2.58
-  annual_survival_probability: 0.8
+  annual_survival_probability: 0.9
   brumination:
     file_path: '/home/mremington/Documents/therma_sim/therma_sim/src/therma_sim/job_and_config_files/brumination_dates_Canada.json'
     scale: 'Day'

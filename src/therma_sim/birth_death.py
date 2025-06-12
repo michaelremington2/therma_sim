@@ -162,22 +162,25 @@ class Birth_Death_Module(object):
         '''
         if self.agent.body_temperature < self.agent.ct_min:
             self.ct_out_of_bounds_tcounter += 1
-            # Calculate Death Probability
-            death_prob = self.ct_death_probability_calculator(initialProb=0.0)
-            # Check if the agent dies
-            if np.random.rand() < death_prob:
-                self.thermal_critical_death()
-                return
+            # # Calculate Death Probability
+            # death_prob = self.ct_death_probability_calculator(initialProb=0.0)
+            # # Check if the agent dies
+            # if np.random.rand() < death_prob:
+            #     self.thermal_critical_death()
+            #     return
         elif self.agent.body_temperature > self.agent.ct_max:
             self.ct_out_of_bounds_tcounter += 1
-            death_prob = self.ct_death_probability_calculator(initialProb=0.0)
-            # Check if the agent dies
-            if np.random.rand() < death_prob:
-                self.thermal_critical_death()
-                return
+            # death_prob = self.ct_death_probability_calculator(initialProb=0.0)
+            # # Check if the agent dies
+            # if np.random.rand() < death_prob:
+            #     self.thermal_critical_death()
+            #     return
         else:
             self.ct_out_of_bounds_tcounter = 0
-            # Reset the counter if within bounds
+        if self.ct_out_of_bounds_tcounter >= self.agent.ct_max_steps:
+            # Removin probabilistic ct_death
+            self.thermal_critical_death()
+
  
     
     def thermal_critical_death(self):
