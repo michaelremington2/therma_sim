@@ -117,24 +117,21 @@ for burrow_temp, open_temp in zip(burrow_temps, open_temps):
     )
     body_temp_series.append(t_body)
 
-import matplotlib.pyplot as plt
 
-# Convert microhabitat state to binary for plotting: 'Out' → 1, 'In' → 0
 mh_binary = [1 if mh == 'Out' else 0 for mh in microhabitat_series]
 
-# Create a 2-row subplot
+
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
-# Top plot: Body temperature
+
 ax1.plot(body_temp_series, label='Simulated Body Temp')
 ax1.plot(open_temps, label='Open Temp', linestyle='--')
 ax1.plot(burrow_temps, label='Burrow Temp', linestyle=':')
-ax1.set_ylabel('Temperature (°C)')
+ax1.set_ylabel('Body Temperature (°C)')
 ax1.set_title('Thermoregulation Over Time')
 ax1.legend()
 ax1.grid(True)
 
-# Bottom plot: Microhabitat decision
 ax2.step(range(len(mh_binary)), mh_binary, where='mid', label='Microhabitat (1=Out, 0=In)', color='black')
 ax2.set_ylabel('Microhabitat')
 ax2.set_xlabel('Time Step')
@@ -147,4 +144,88 @@ plt.show()
 
 
 
+```
+
+
+Ct_sub model demonstration: 
+
+- critical thermal boundary exceedance
+
+```{python}
+# Set up parameters for critical thermal boundary
+ct_min = 5
+ct_max = 45
+ct_max_steps = 3  
+
+
+body_temps = [46, 47, 48, 44, 43] 
+ct_exceed_count = 0
+dead = False
+
+for t in body_temps:
+    if t < ct_min or t > ct_max:
+        ct_exceed_count += 1
+        print(f"Body temp {t}°C outside CT [{ct_min}, {ct_max}]! Exceed count: {ct_exceed_count}")
+        if ct_exceed_count >= ct_max_steps:
+            dead = True
+            print("Snake has died due to exceeding critical thermal boundary.")
+            break
+    else:
+        # Reset the counter if the individual comes back in bounds
+        ct_exceed_count = 0 
+
+if not dead:
+    print("Snake survived the simulation.")
+```
+
+- critical thermal boundary recovery example. In our actual model, when the organism is outside its thermal critical limit it is forced to do the thermoregulation  behavior showcased earlier.
+
+```{python}
+body_temps = [46, 47, 43, 46, 47]  # Body temps, first three are above ct_max
+ct_exceed_count = 0
+dead = False
+
+for t in body_temps:
+    if t < ct_min or t > ct_max:
+        ct_exceed_count += 1
+        print(f"Body temp {t}°C outside CT [{ct_min}, {ct_max}]! Exceed count: {ct_exceed_count}")
+        if ct_exceed_count >= ct_max_steps:
+            dead = True
+            print("Snake has died due to exceeding critical thermal boundary.")
+            break
+    else:
+        ct_exceed_count = 0  # Reset if within bounds
+
+if not dead:
+    print("Snake survived the simulation.")
+```
+
+this is the actual function we use in the model. A probablist version was attempted but assuming a linear mortality rate per time step outside the ct boundary lead to population collapse.
+
+```{python}
+def critical_death_sub_model(self):
+    '''
+    Function for checking if the agent is within its critical temperature range
+    Checks a out out of bounds counter and the probability of death increases linearly.
+    '''
+    if self.agent.body_temperature < self.agent.ct_min:
+        self.ct_out_of_bounds_tcounter += 1
+        # # Calculate Death Probability
+        # death_prob = self.ct_death_probability_calculator(initialProb=0.0)
+        # # Check if the agent dies
+        # if np.random.rand() < death_prob:
+        #     self.thermal_critical_death()
+        #     return
+    elif self.agent.body_temperature > self.agent.ct_max:
+        self.ct_out_of_bounds_tcounter += 1
+        # death_prob = self.ct_death_probability_calculator(initialProb=0.0)
+        # # Check if the agent dies
+        # if np.random.rand() < death_prob:
+        #     self.thermal_critical_death()
+        #     return
+    else:
+        self.ct_out_of_bounds_tcounter = 0
+    if self.ct_out_of_bounds_tcounter >= self.agent.ct_max_steps:
+        # Removing probabilistic ct_death
+        self.thermal_critical_death()
 ```
