@@ -1,0 +1,150 @@
+The thermoregulation model currently only supports ectotherm body temperature simulation and behavior. 
+
+The preferred sub model tracks the distance of body temperature to t-opt to determine whether whether to move to a given microhabitat. 
+
+Before showcasin the thermoregulation behavioral algorithm. Below we initialize a silico snake
+under the parameters we use in our thermasim model.
+
+```{python}
+import ThermaNewt.sim_snake_tb as tn
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+delta_t = 60
+k = 0.01
+t_pref_min = 19
+t_pref_max = 29
+t_opt = 26
+ct_min = 5
+ct_max = 45
+ct_max_steps = 3
+
+thermoregulation_module = tn.ThermalSimulator(flip_logic='preferred',                                   t_pref_min=t_pref_min,
+ t_pref_max=t_pref_max,
+ t_pref_opt=t_opt)
+
+def thermal_accuracy_calculator(body_temperature, t_opt):
+    '''Calculate thermal accuracy'''
+    return np.abs(float(t_opt) - float(body_temperature))
+
+def display_move(mh):
+    if mh == 'In':
+        print('Move to Burrow')
+    elif mh == 'Out':
+        print('Move to Open')
+    else:
+        raise ValueError(f"Microhabitat: {mh} has not been programmed into the system")
+
+body_temperature = 32
+burrow_temp = 10
+open_temp = 30
+
+active = True
+mh = thermoregulation_module.do_i_flip(
+    t_body=body_temperature,
+    burrow_temp=burrow_temp,
+    open_temp=open_temp
+)
+
+```
+
+Now that we have intialized our thermoregulation sub model. Lets run it for one step for a snake that is too warm. Since it is thermoregulating, we mark the snake as active which implies we are using AMR rather than SMR. This will be elaborated on in the metabolism section.
+
+The preferred sub-model is a probabilistic model where it is semi-random what decision will make if it is in its thermal performance zone, but deterministic if outside its zone.
+
+Warm Move
+```{python}
+body_temperature = 35
+burrow_temp = 10
+open_temp = 30
+
+active = True
+mh = thermoregulation_module.do_i_flip(
+    t_body=body_temperature,
+    burrow_temp=burrow_temp,
+    open_temp=open_temp
+)
+
+display_move(mh)
+```
+
+Cold move
+```{python}
+
+body_temperature = 10
+burrow_temp = 10
+open_temp = 30
+
+active = True
+mh = thermoregulation_module.do_i_flip(
+    t_body=body_temperature,
+    burrow_temp=burrow_temp,
+    open_temp=open_temp
+)
+
+display_move(mh)
+
+```
+
+Neutral moves. There is an underlying simulated body temperature logic to determine the optimal decision.
+```{python}
+
+burrow_temps = np.linspace(20, 20, 24)
+open_temps = np.linspace(30, 30, 24)
+t_initial = 29.0
+
+body_temp_series = []
+microhabitat_series = []
+
+t_body = t_initial
+
+for burrow_temp, open_temp in zip(burrow_temps, open_temps):
+    mh = thermoregulation_module.do_i_flip(
+        t_body=t_body,
+        burrow_temp=burrow_temp,
+        open_temp=open_temp
+    )
+    microhabitat_series.append(mh)
+    
+    # Update t_body using Newton's Law of Cooling
+    t_env = burrow_temp if mh == 'In' else open_temp
+    t_body = thermoregulation_module.cooling_eq_k(
+        k=k,
+        t_body=t_body,
+        t_env=t_env,
+        delta_t=delta_t
+    )
+    body_temp_series.append(t_body)
+
+import matplotlib.pyplot as plt
+
+# Convert microhabitat state to binary for plotting: 'Out' → 1, 'In' → 0
+mh_binary = [1 if mh == 'Out' else 0 for mh in microhabitat_series]
+
+# Create a 2-row subplot
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+# Top plot: Body temperature
+ax1.plot(body_temp_series, label='Simulated Body Temp')
+ax1.plot(open_temps, label='Open Temp', linestyle='--')
+ax1.plot(burrow_temps, label='Burrow Temp', linestyle=':')
+ax1.set_ylabel('Temperature (°C)')
+ax1.set_title('Thermoregulation Over Time')
+ax1.legend()
+ax1.grid(True)
+
+# Bottom plot: Microhabitat decision
+ax2.step(range(len(mh_binary)), mh_binary, where='mid', label='Microhabitat (1=Out, 0=In)', color='black')
+ax2.set_ylabel('Microhabitat')
+ax2.set_xlabel('Time Step')
+ax2.set_yticks([0, 1])
+ax2.set_yticklabels(['In', 'Out'])
+ax2.grid(True)
+
+plt.tight_layout()
+plt.show()
+
+
+
+```
