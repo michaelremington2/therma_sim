@@ -7,6 +7,83 @@ kernel: therma_sim
 
 Rattlesnakes are the only agent with a dynamic behavioral profile. The kangaroo rats can only be active or inactive at certain times if the day. 
 
-Rattlesnakes have 5 behaviors they can employ. Bruminating, prey searching, and at certain times of the day; Resting are deterministic behaviors that the snake has to do. During active times of the day; snakes can choose between 3 behaviors of resting, thermoregulating, and foraging.
+Rattlesnakes have 5 behaviors they can employ. During active hours, a parameter set by the user, snakes may choose via a utility algorithm 3 behaviors: Rest, Thermoregulate, Forage. The utility of these three behaviors will be explained further below in the utility section. 
+
+Certain behaviors are deterministic under given criteria. These include Bruminating, prey searching, thermoregulation, and resting.
+
+During the brumination season which is determined by an input json file; snakes are inacactive and have a set body temperature that is set by the user. In our case we set this based on empirical measurments. 
+
+Prey searching is a post foraging behavior to model the active search snakes conduct to find prey after a strike. This is driven by a search counter. The time spent searching is determined by the 'handling time' parameter which is apart of the holling type 2 foraging function. This function will be elaborated on in the foraging section.
+
+Thermoregulating is deterministic under the critical thermal sub-model. When the orgnism is outside of its thermal critical limits set by the user, it is forced to thermorgulate. If it rebounds back to a body temperature under in this range; the counter is reset back to zero and the organism no longer is forced to thermoregulate. See the thermoregulation sub-model quarto document for further details.
+
+Finally, a parameter called active times dictates when the utility behavior algorithm is imployed. During inactive hours, the organism is forced to employ the rest behavior.
 
 The base function to employ this is the step function in the ectotherm behavior class 
+
+```{python}
+#| echo: true
+#| eval: false
+
+def step(self):
+    '''Handles picking and executing behavior functions'''
+    self.reset_log_metrics()
+    if self.snake.is_bruminating_today():
+        self.bruminate()
+    elif self.snake.birth_death_module.ct_out_of_bounds_tcounter>0:
+        self.thermoregulate()
+    elif self.snake.search_counter > 0:
+        self.snake.search_counter -= 1
+        self.search()
+    else:
+        behavior = self.choose_behavior()
+        behavior_actions = {
+            'Rest': self.rest,
+            'Thermoregulate': self.thermoregulate,
+            'Forage': self.forage,
+        }
+        behavior_actions.get(behavior, lambda: ValueError(f"Unknown behavior: {behavior}"))()
+```
+
+## Utility Behavioral Algorithm.
+
+For the stochastic behavioral algorithm; the function 'choose_behavior' is responsible for determining preference weights for the three behaviors ['Rest', 'Thermoregulate', 'Forage']. These preference weights are calculated by comparing the internal state of the organism to critical limits of thermal accuarcy and metabolic state shown in the equations below.
+
+$$
+\begin{aligned}
+U_{\text{rest}} &= \frac{M}{M_{\text{max}}} \\
+U_{\text{forage}} &= 1 - \frac{M}{M_{\text{max}}} \\
+U_{\text{thermoregulate}} &= 1 - \left| \frac{T_b - T_{\text{opt}}}{T_{\text{max}}} \right|
+\end{aligned}
+$$
+
+Where:
+
+$$
+\begin{align}
+M &:\ \text{current metabolic state} \\
+M_{\text{max}} &:\ \text{maximum metabolic state} \\
+T_b &:\ \text{body temperature} \\
+T_{\text{opt}} &:\ \text{thermal optimum} \\
+T_{\text{max}} &:\ \text{max deviation allowed from } T_{\text{opt}}
+\end{align}
+$$
+
+
+The probability of choosing a given behavior is given by this softmax equation shown below.
+
+$$
+P(b_i) = \frac{\exp\left( \frac{U_{b_i}}{\tau} \right)}{\sum\limits_{j=1}^{n} \exp\left( \frac{U_{b_j}}{\tau} \right)}
+$$
+
+Where:
+
+$$
+\begin{align}
+P(b_i) &\text{: probability of selecting behavior } b_i \\
+U_{b_i} &\text{: utility of behavior } b_i \\
+\tau &\text{: temperature opportunity adjustment (TOA), a softmax temperature parameter} \\
+n &\text{: total number of behavioral options}
+\end{align}
+$$
+
