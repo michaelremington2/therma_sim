@@ -170,3 +170,4 @@ src/therma_sim/job_and_config_files
 src/therma_sim/Input_Temperature_Data-exp/
 src/therma_sim/input_temp_data
 run_experiments/
+sub_model_examples/thermoregulation_ct_files/

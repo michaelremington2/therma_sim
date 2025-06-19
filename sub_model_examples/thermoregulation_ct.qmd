@@ -1,3 +1,11 @@
+---
+title: "Thermoregulation sub model"
+format: html
+jupyter: false
+kernel: therma_sim  
+---
+
+
 The thermoregulation model currently only supports ectotherm body temperature simulation and behavior. 
 
 The preferred sub model tracks the distance of body temperature to t-opt to determine whether whether to move to a given microhabitat. 
@@ -6,6 +14,7 @@ Before showcasin the thermoregulation behavioral algorithm. Below we initialize 
 under the parameters we use in our thermasim model.
 
 ```{python}
+#| echo: true
 import ThermaNewt.sim_snake_tb as tn
 import numpy as np
 import matplotlib.pyplot as plt
@@ -55,6 +64,7 @@ The preferred sub-model is a probabilistic model where it is semi-random what de
 
 Warm Move
 ```{python}
+#| echo: true
 body_temperature = 35
 burrow_temp = 10
 open_temp = 30
@@ -71,6 +81,7 @@ display_move(mh)
 
 Cold move
 ```{python}
+#| echo: true
 
 body_temperature = 10
 burrow_temp = 10
@@ -89,6 +100,7 @@ display_move(mh)
 
 Neutral moves. There is an underlying simulated body temperature logic to determine the optimal decision.
 ```{python}
+#| echo: true
 
 burrow_temps = np.linspace(20, 20, 24)
 open_temps = np.linspace(30, 30, 24)
@@ -152,6 +164,7 @@ Ct_sub model demonstration:
 - critical thermal boundary exceedance
 
 ```{python}
+#| echo: true
 # Set up parameters for critical thermal boundary
 ct_min = 5
 ct_max = 45
@@ -181,6 +194,7 @@ if not dead:
 - critical thermal boundary recovery example. In our actual model, when the organism is outside its thermal critical limit it is forced to do the thermoregulation  behavior showcased earlier.
 
 ```{python}
+#| echo: true
 body_temps = [46, 47, 43, 46, 47]  # Body temps, first three are above ct_max
 ct_exceed_count = 0
 dead = False
@@ -203,6 +217,7 @@ if not dead:
 this is the actual function we use in the model. A probablist version was attempted but assuming a linear mortality rate per time step outside the ct boundary lead to population collapse.
 
 ```{python}
+#| echo: true
 def critical_death_sub_model(self):
     '''
     Function for checking if the agent is within its critical temperature range

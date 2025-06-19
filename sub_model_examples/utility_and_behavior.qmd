@@ -1,0 +1,12 @@
+---
+title: "Behavior Sub Model"
+format: html
+jupyter: false
+kernel: therma_sim  
+---
+
+Rattlesnakes are the only agent with a dynamic behavioral profile. The kangaroo rats can only be active or inactive at certain times if the day. 
+
+Rattlesnakes have 5 behaviors they can employ. Bruminating, prey searching, and at certain times of the day; Resting are deterministic behaviors that the snake has to do. During active times of the day; snakes can choose between 3 behaviors of resting, thermoregulating, and foraging.
+
+The base function to employ this is the step function in the ectotherm behavior class 
