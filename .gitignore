@@ -172,3 +172,4 @@ src/therma_sim/input_temp_data
 run_experiments/
 sub_model_examples/thermoregulation_ct_files/
 sub_model_examples/utility_and_behavior_files/
+sub_model_examples/metabolism_files/

@@ -4,6 +4,7 @@ format: html
 jupyter: false
 kernel: therma_sim  
 ---
+## Introduction
 
 Rattlesnakes are the only agent with a dynamic behavioral profile. The kangaroo rats can only be active or inactive at certain times if the day. 
 
@@ -87,3 +88,33 @@ n &\text{: total number of behavioral options}
 \end{align}
 $$
 
+## Foraing Behavior
+
+In our model, only te rattlesnake agents explicitely forage since they have a metabolic energy bank. If they partake in the behavior forage. Interactions are driven through the holling type 2 foraging function to model encounter rate as a function of prey density, handling time, and attack rate
+
+$$
+\lambda = \frac{a N}{1 + a h N}
+$$
+
+where:
+
+- $a$: predator's attack rate  
+- $h$: handling time per prey item  
+- $N$: local prey density. Calculated as number of prey active divided by landscape size (Hectares) 
+- $\lambda$: expected number of prey encounters per time step  
+
+Actual prey encounters were sampled from a Poisson distribution:
+
+$$
+k \sim \text{Poisson}(\lambda)
+$$
+
+To reflect behavioral constraints, only one prey could be successfully captured per time step. If $k > 0$ and prey were locally available, the predator attempted a strike with success probability $p_s$:
+
+$$
+u \sim \text{Uniform}(0,1), \quad \text{capture success if } u < p_s
+$$
+
+where $p_s$ is the predator's strike performance. Upon a successful strike, the prey was removed from the population and the predator gained energy based on prey mass, caloric content, and digestion efficiency. This value is then added to the snakes metabolic state and the foraging behavior is complete. 
+
+If a snake does not successfully capture a kangaroo rat agent, the cost is the calories it takes to be active for one time step.

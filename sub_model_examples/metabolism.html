@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Behavior Sub Model</title>
+<title>Metabolism Sub Model</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,55 +20,20 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
-<script src="utility_and_behavior_files/libs/clipboard/clipboard.min.js"></script>
-<script src="utility_and_behavior_files/libs/quarto-html/quarto.js" type="module"></script>
-<script src="utility_and_behavior_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="utility_and_behavior_files/libs/quarto-html/popper.min.js"></script>
-<script src="utility_and_behavior_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="utility_and_behavior_files/libs/quarto-html/anchor.min.js"></script>
-<link href="utility_and_behavior_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="utility_and_behavior_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="utility_and_behavior_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="utility_and_behavior_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="utility_and_behavior_files/libs/bootstrap/bootstrap-9bd3584f00258edffe3422d7f0c8400c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="metabolism_files/libs/clipboard/clipboard.min.js"></script>
+<script src="metabolism_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="metabolism_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="metabolism_files/libs/quarto-html/popper.min.js"></script>
+<script src="metabolism_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="metabolism_files/libs/quarto-html/anchor.min.js"></script>
+<link href="metabolism_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="metabolism_files/libs/quarto-html/quarto-syntax-highlighting-37eea08aefeeee20ff55810ff984fec1.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="metabolism_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="metabolism_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="metabolism_files/libs/bootstrap/bootstrap-9bd3584f00258edffe3422d7f0c8400c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -110,7 +75,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Behavior Sub Model</h1>
+<h1 class="title">Metabolism Sub Model</h1>
 </div>
 
 
@@ -129,94 +94,115 @@ window.Quarto = {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Rattlesnakes are the only agent with a dynamic behavioral profile. The kangaroo rats can only be active or inactive at certain times if the day.</p>
-<p>Rattlesnakes have 5 behaviors they can employ. During active hours, a parameter set by the user, snakes may choose via a utility algorithm 3 behaviors: Rest, Thermoregulate, Forage. The utility of these three behaviors will be explained further below in the utility section.</p>
-<p>Certain behaviors are deterministic under given criteria. These include Bruminating, prey searching, thermoregulation, and resting.</p>
-<p>During the brumination season which is determined by an input json file; snakes are inacactive and have a set body temperature that is set by the user. In our case we set this based on empirical measurments.</p>
-<p>Prey searching is a post foraging behavior to model the active search snakes conduct to find prey after a strike. This is driven by a search counter. The time spent searching is determined by the ‘handling time’ parameter which is apart of the holling type 2 foraging function. This function will be elaborated on in the foraging section.</p>
-<p>Thermoregulating is deterministic under the critical thermal sub-model. When the orgnism is outside of its thermal critical limits set by the user, it is forced to thermorgulate. If it rebounds back to a body temperature under in this range; the counter is reset back to zero and the organism no longer is forced to thermoregulate. See the thermoregulation sub-model quarto document for further details.</p>
-<p>Finally, a parameter called active times dictates when the utility behavior algorithm is imployed. During inactive hours, the organism is forced to employ the rest behavior.</p>
-<p>The base function to employ this is the step function in the ectotherm behavior class</p>
-<div id="9e90a4ea" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> step(<span class="va">self</span>):</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">'''Handles picking and executing behavior functions'''</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.reset_log_metrics()</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="va">self</span>.snake.is_bruminating_today():</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.bruminate()</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="va">self</span>.snake.birth_death_module.ct_out_of_bounds_tcounter<span class="op">&gt;</span><span class="dv">0</span>:</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.thermoregulate()</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="va">self</span>.snake.search_counter <span class="op">&gt;</span> <span class="dv">0</span>:</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.snake.search_counter <span class="op">-=</span> <span class="dv">1</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.search()</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        behavior <span class="op">=</span> <span class="va">self</span>.choose_behavior()</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        behavior_actions <span class="op">=</span> {</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">'Rest'</span>: <span class="va">self</span>.rest,</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">'Thermoregulate'</span>: <span class="va">self</span>.thermoregulate,</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>            <span class="st">'Forage'</span>: <span class="va">self</span>.forage,</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        behavior_actions.get(behavior, <span class="kw">lambda</span>: <span class="pp">ValueError</span>(<span class="ss">f"Unknown behavior: </span><span class="sc">{</span>behavior<span class="sc">}</span><span class="ss">"</span>))()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="utility-behavioral-algorithm." class="level2">
-<h2 class="anchored" data-anchor-id="utility-behavioral-algorithm.">Utility Behavioral Algorithm.</h2>
-<p>For the stochastic behavioral algorithm; the function ‘choose_behavior’ is responsible for determining preference weights for the three behaviors [‘Rest’, ‘Thermoregulate’, ‘Forage’]. These preference weights are calculated by comparing the internal state of the organism to critical limits of thermal accuarcy and metabolic state shown in the equations below.</p>
-<p><span class="math display">\[
-\begin{aligned}
-U_{\text{rest}} &amp;= \frac{M}{M_{\text{max}}} \\
-U_{\text{forage}} &amp;= 1 - \frac{M}{M_{\text{max}}} \\
-U_{\text{thermoregulate}} &amp;= 1 - \left| \frac{T_b - T_{\text{opt}}}{T_{\text{max}}} \right|
-\end{aligned}
-\]</span></p>
-<p>Where:</p>
-<p><span class="math display">\[
-\begin{align}
-M &amp;:\ \text{current metabolic state} \\
-M_{\text{max}} &amp;:\ \text{maximum metabolic state} \\
-T_b &amp;:\ \text{body temperature} \\
-T_{\text{opt}} &amp;:\ \text{thermal optimum} \\
-T_{\text{max}} &amp;:\ \text{max deviation allowed from } T_{\text{opt}}
-\end{align}
-\]</span></p>
-<p>The probability of choosing a given behavior is given by this softmax equation shown below.</p>
-<p><span class="math display">\[
-P(b_i) = \frac{\exp\left( \frac{U_{b_i}}{\tau} \right)}{\sum\limits_{j=1}^{n} \exp\left( \frac{U_{b_j}}{\tau} \right)}
-\]</span></p>
-<p>Where:</p>
-<p><span class="math display">\[
-\begin{align}
-P(b_i) &amp;\text{: probability of selecting behavior } b_i \\
-U_{b_i} &amp;\text{: utility of behavior } b_i \\
-\tau &amp;\text{: temperature opportunity adjustment (TOA), a softmax temperature parameter} \\
-n &amp;\text{: total number of behavioral options}
-\end{align}
-\]</span></p>
-</section>
-<section id="foraing-behavior" class="level2">
-<h2 class="anchored" data-anchor-id="foraing-behavior">Foraing Behavior</h2>
-<p>In our model, only te rattlesnake agents explicitely forage since they have a metabolic energy bank. If they partake in the behavior forage. Interactions are driven through the holling type 2 foraging function to model encounter rate as a function of prey density, handling time, and attack rate</p>
-<p><span class="math display">\[
-\lambda = \frac{a N}{1 + a h N}
-\]</span></p>
-<p>where:</p>
+<p>This document describes the <code>EctothermMetabolism</code> class, a simulation component modeling energy dynamics in ectothermic organisms based on mass, temperature, and activity level. It is used in agent-based ecological simulations to track the metabolic state of individuals over time.</p>
+<p>Ectotherms regulate their body temperature behaviorally. Their metabolic rate is highly dependent on both body mass and body temperature. This module integrates:</p>
 <ul>
-<li><span class="math inline">\(a\)</span>: predator’s attack rate<br>
-</li>
-<li><span class="math inline">\(h\)</span>: handling time per prey item<br>
-</li>
-<li><span class="math inline">\(N\)</span>: local prey density. Calculated as number of prey active divided by landscape size (Hectares)</li>
-<li><span class="math inline">\(\lambda\)</span>: expected number of prey encounters per time step</li>
+<li><strong>Standard Metabolic Rate (SMR)</strong> scaling with mass and temperature.</li>
+<li><strong>Energy expenditure</strong> from resting or foraging behaviors.</li>
+<li><strong>Energy intake</strong> from prey consumption.</li>
+<li>A <strong>metabolic state</strong> variable representing internal energy reserves, bounded by a maximum based on expected meal size and caloric yield.</li>
 </ul>
-<p>Actual prey encounters were sampled from a Poisson distribution:</p>
+<hr>
+</section>
+<section id="metabolic-state-initialization" class="level2">
+<h2 class="anchored" data-anchor-id="metabolic-state-initialization">Metabolic State Initialization</h2>
+<p>Each organism is initialized with a metabolic state sampled from a user-defined range, single value, or tuple. The maximum metabolic state is computed as:</p>
 <p><span class="math display">\[
-k \sim \text{Poisson}(\lambda)
+\text{Max}_M = m_{\text{max}} \times C_{\text{g}} \times M_{\text{prey}}
 \]</span></p>
-<p>To reflect behavioral constraints, only one prey could be successfully captured per time step. If <span class="math inline">\(k &gt; 0\)</span> and prey were locally available, the predator attempted a strike with success probability <span class="math inline">\(p_s\)</span>:</p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(m_{\text{max}}\)</span>: maximum meals stored</li>
+<li><span class="math inline">\(C_{\text{g}}\)</span>: calories per gram of prey</li>
+<li><span class="math inline">\(M_{\text{prey}}\)</span>: expected prey mass</li>
+</ul>
+<hr>
+</section>
+<section id="smr-equation" class="level2">
+<h2 class="anchored" data-anchor-id="smr-equation">SMR Equation</h2>
+<p>Standard Metabolic Rate (SMR), a proxy for <span class="math inline">\(\dot{V}O_2\)</span>, is computed as a log-linear function of body mass and temperature:</p>
 <p><span class="math display">\[
-u \sim \text{Uniform}(0,1), \quad \text{capture success if } u &lt; p_s
+\log_{10}(\text{SMR}) = X_1 \cdot \log_{10}(M) + X_2 \cdot T + X_3
 \]</span></p>
-<p>where <span class="math inline">\(p_s\)</span> is the predator’s strike performance. Upon a successful strike, the prey was removed from the population and the predator gained energy based on prey mass, caloric content, and digestion efficiency. This value is then added to the snakes metabolic state and the foraging behavior is complete.</p>
-<p>If a snake does not successfully capture a kangaroo rat agent, the cost is the calories it takes to be active for one time step.</p>
+<p>This equation was derived from (https://doi.org/10.1643/CP-03-074R1) and coefficents were set based off this paper. where:</p>
+<ul>
+<li><span class="math inline">\(M\)</span>: body mass (g)</li>
+<li><span class="math inline">\(T\)</span>: body temperature (°C)</li>
+<li><span class="math inline">\(X_1, X_2, X_3\)</span>: empirically derived coefficients</li>
+</ul>
+<p>The SMR is then exponentiated:</p>
+<p><span class="math display">\[
+\text{SMR} = 10^{\log_{10}(\text{SMR})}
+\]</span></p>
+<hr>
+</section>
+<section id="energy-expenditure" class="level2">
+<h2 class="anchored" data-anchor-id="energy-expenditure">Energy Expenditure</h2>
+<p>Hourly energy expenditure is scaled by an <strong>activity coefficient</strong> (1 for resting, 2 for active behaviors): When the activity coeeffiecent is 1, the organism is under a SMR energy expendeture profile. When the activity profile is 2, the organism is in AMR.</p>
+<p><span class="math display">\[
+\text{Energy} = \text{SMR} \times \alpha \times \text{conversion constants}
+\]</span></p>
+<ul>
+<li><span class="math inline">\(\alpha\)</span>: activity multiplier (e.g., 2 for foraging)</li>
+<li>Conversion factors:
+<ul>
+<li><span class="math inline">\(1\ \text{mL O}_2 = 19.874\ \text{J}\)</span></li>
+<li><span class="math inline">\(1\ \text{J} = 2.39 \times 10^{-4}\ \text{Calories}\)</span></li>
+</ul></li>
+</ul>
+<hr>
+</section>
+<section id="behavior-activity-profiles" class="level2">
+<h2 class="anchored" data-anchor-id="behavior-activity-profiles">Behavior activity profiles</h2>
+<ul>
+<li>Resting
+<ul>
+<li>Active: False</li>
+<li>Activity Coefficient: 1</li>
+<li>SMR</li>
+</ul></li>
+<li>Thermoregulating
+<ul>
+<li>Active: True</li>
+<li>Activity Coefficient: 2</li>
+<li>AMR</li>
+</ul></li>
+<li>Foraging
+<ul>
+<li>Active: True</li>
+<li>Activity Coefficient: 2</li>
+<li>AMR</li>
+</ul></li>
+<li>Searching
+<ul>
+<li>Active: True</li>
+<li>Activity Coefficient: 2</li>
+<li>AMR</li>
+</ul></li>
+<li>Bruminating
+<ul>
+<li>Active: False</li>
+<li>Activity Coefficient: 1</li>
+<li>SMR</li>
+</ul></li>
+</ul>
+</section>
+<section id="energy-intake-from-prey" class="level2">
+<h2 class="anchored" data-anchor-id="energy-intake-from-prey">Energy Intake from Prey</h2>
+<p>Caloric gain from consuming prey is:</p>
+<p><span class="math display">\[
+E_{\text{gain}} = M_{\text{prey}} \times C_{\text{g}} \times \eta
+\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(C_{\text{g}}\)</span>: calories per gram of prey</li>
+<li><span class="math inline">\(\eta\)</span>: digestion efficiency</li>
+</ul>
+<hr>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>If an organisms metabolic state reaches <span class="math inline">\(0\)</span>, they die due to starvation and are removed from the simulation.</p>
 </section>
 
 </main>

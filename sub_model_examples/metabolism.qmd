@@ -1,0 +1,114 @@
+---
+title: "Metabolism Sub Model"
+format: html
+jupyter: false
+kernel: therma_sim  
+---
+## Introduction
+
+This document describes the `EctothermMetabolism` class, a simulation component modeling energy dynamics in ectothermic organisms based on mass, temperature, and activity level. It is used in agent-based ecological simulations to track the metabolic state of individuals over time.
+
+Ectotherms regulate their body temperature behaviorally. Their metabolic rate is highly dependent on both body mass and body temperature. This module integrates:
+
+- **Standard Metabolic Rate (SMR)** scaling with mass and temperature.
+- **Energy expenditure** from resting or foraging behaviors.
+- **Energy intake** from prey consumption.
+- A **metabolic state** variable representing internal energy reserves, bounded by a maximum based on expected meal size and caloric yield.
+
+---
+
+## Metabolic State Initialization
+
+Each organism is initialized with a metabolic state sampled from a user-defined range, single value, or tuple. The maximum metabolic state is computed as:
+
+$$
+\text{Max}_M = m_{\text{max}} \times C_{\text{g}} \times M_{\text{prey}}
+$$
+
+Where:
+
+- $m_{\text{max}}$: maximum meals stored
+- $C_{\text{g}}$: calories per gram of prey
+- $M_{\text{prey}}$: expected prey mass
+
+---
+
+## SMR Equation
+
+Standard Metabolic Rate (SMR), a proxy for $\dot{V}O_2$, is computed as a log-linear function of body mass and temperature:
+
+$$
+\log_{10}(\text{SMR}) = X_1 \cdot \log_{10}(M) + X_2 \cdot T + X_3
+$$
+
+This equation was derived from (https://doi.org/10.1643/CP-03-074R1) and coefficents were set based off this paper.
+where:
+
+- $M$: body mass (g)
+- $T$: body temperature (°C)
+- $X_1, X_2, X_3$: empirically derived coefficients
+
+The SMR is then exponentiated:
+
+$$
+\text{SMR} = 10^{\log_{10}(\text{SMR})}
+$$
+
+---
+
+## Energy Expenditure
+
+Hourly energy expenditure is scaled by an **activity coefficient** (1 for resting, 2 for active behaviors):
+When the activity coeeffiecent is 1, the organism is under a SMR energy expendeture profile. When the activity profile is 2, the organism is in AMR.
+
+$$
+\text{Energy} = \text{SMR} \times \alpha \times \text{conversion constants}
+$$
+
+- $\alpha$: activity multiplier (e.g., 2 for foraging)
+- Conversion factors:
+  - $1\ \text{mL O}_2 = 19.874\ \text{J}$
+  - $1\ \text{J} = 2.39 \times 10^{-4}\ \text{Calories}$
+
+---
+
+## Behavior activity profiles
+
+- Resting
+    - Active: False
+    - Activity Coefficient: 1
+    - SMR
+- Thermoregulating
+    - Active: True
+    - Activity Coefficient: 2
+    - AMR
+- Foraging
+    - Active: True
+    - Activity Coefficient: 2
+    - AMR
+- Searching
+    - Active: True
+    - Activity Coefficient: 2
+    - AMR
+- Bruminating
+    - Active: False
+    - Activity Coefficient: 1
+    - SMR
+
+
+## Energy Intake from Prey
+
+Caloric gain from consuming prey is:
+
+$$
+E_{\text{gain}} = M_{\text{prey}} \times C_{\text{g}} \times \eta
+$$
+
+Where:
+
+- $C_{\text{g}}$: calories per gram of prey
+- $\eta$: digestion efficiency
+
+---
+## Conclusion
+If an organisms metabolic state reaches $0$, they die due to starvation and are removed from the simulation.
