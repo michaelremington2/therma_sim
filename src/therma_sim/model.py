@@ -516,8 +516,9 @@ class ThermaSim(mesa.Model):
         # Snakes
         snake_shuffle = self.randomize_snakes()
         for snake in snake_shuffle:
-            data = snake.report_data()
-            self.logger.log_data(file_name = self.output_folder+"Rattlesnake.csv", data=data)
+            if self.hour in snake.active_hours and not snake.is_bruminating_today():
+                data = snake.report_data()
+                self.logger.log_data(file_name = self.output_folder+"Rattlesnake.csv", data=data)
             snake.step()
             data = None
         snake_shuffle = self.randomize_snakes()
