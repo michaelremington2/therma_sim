@@ -241,7 +241,6 @@ class ThermaSim(mesa.Model):
             if isinstance(interaction_data["expected_prey_body_size"], dict):
                 prey_body_size_range = get_range(interaction_data["expected_prey_body_size"])
                 interaction_data["expected_prey_body_size"] = (prey_body_size_range.start + prey_body_size_range.stop - 1) / 2
-
         return interaction_map
 
     @staticmethod
