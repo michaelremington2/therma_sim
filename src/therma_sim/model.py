@@ -146,6 +146,36 @@ class ThermaSim(mesa.Model):
     def active_snakes_count(self):
         return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
                 if snake.active and snake.alive)
+    # Behavioral profile
+    @property
+    def count_foraging(self):
+        """Counts the number of Rattlesnakes that are foraging."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_behavior == "Foraging")
+    
+    @property
+    def count_thermoregulate(self):
+        """Counts the number of Rattlesnakes that are thermoregulating."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_behavior == "Thermoregulate")
+    
+    @property
+    def count_rest(self):
+        """Counts the number of Rattlesnakes that are resting."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_behavior == "Rest")
+    
+    @property
+    def count_search(self):
+        """Counts the number of Rattlesnakes that are Searching for prey items."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_behavior == "Search")
+    
+    @property
+    def count_brumation(self):
+        """Counts the number of Rattlesnakes in brumation."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_behavior == "Brumation")
 
     ###################################################
     ### Methods
@@ -203,7 +233,6 @@ class ThermaSim(mesa.Model):
                 self.initial_agents_dictionary[species]["Initial_Population"] = initial_pop_size
 
 
-    
     def get_interaction_map(self):
         interaction_map = self.config['Interaction_Map']
 
@@ -238,7 +267,8 @@ class ThermaSim(mesa.Model):
         ]
         model_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year",
-            "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active', 'seed', 'sim_id'
+            "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active',
+            'Foraging', 'Thermorgulating', 'Resting', 'Searching', 'Brumating', 'seed', 'sim_id'
         ]
         birth_death_columns = [
             "Time_Step", "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
@@ -263,12 +293,16 @@ class ThermaSim(mesa.Model):
             round(self.rattlesnake_mean_density, 2),
             round(self.krat_mean_density, 2),
             self.active_snakes_count,
-            self.active_krats_count
+            self.active_krats_count,
+            self.count_foraging,
+            self.count_thermoregulate,
+            self.count_rest,
+            self.count_search,
+            self.count_brumation,
+            self.seed,
+            self.sim_id
         ]
-        if self.step_id == 0:
-            return data + [self.seed, self.sim_id]
-        else:
-            return data + [None, None]
+        return data
         
     def make_landscape(self, model):
         '''
@@ -319,7 +353,6 @@ class ThermaSim(mesa.Model):
         # Compute local densities
         new_local_density = ThermaSim.logistic_population_density_function(global_population, total_area, carrying_capacity, growth_rate, threshold_density)
         return new_local_density
-    
     
     def get_krat_params(self):
         params = self.config['KangarooRat_Parameters']

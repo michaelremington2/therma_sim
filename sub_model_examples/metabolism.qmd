@@ -13,7 +13,7 @@ Ectotherms regulate their body temperature behaviorally. Their metabolic rate is
 - **Standard Metabolic Rate (SMR)** scaling with mass and temperature.
 - **Energy expenditure** from resting or foraging behaviors.
 - **Energy intake** from prey consumption.
-- A **metabolic state** variable representing internal energy reserves, bounded by a maximum based on expected meal size and caloric yield.
+- A **Metabolic state** variable representing internal energy reserves, bounded by a maximum based on expected meal size and caloric yield.
 
 ---
 
