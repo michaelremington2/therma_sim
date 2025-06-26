@@ -85,6 +85,7 @@ class Rattlesnake(mesa.Agent):
         self.search_counter = 0
         self.behavior_module = behavior.EctothermBehavior(snake=self)
         self._current_behavior = ''
+        self._t_env = 0
         self.activity_coefficients = self.snake_config['behavior_activity_coefficients']
 
         # Microhabitat

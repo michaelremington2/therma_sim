@@ -187,12 +187,12 @@ class ThermaSim(mesa.Model):
     @property
     def count_interactions(self):
         """Counts the number of Rattlesnakes that interacted with prey."""
-        return sum(snake.prey_encountered for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
+        return sum(snake.behavior_module.prey_encountered for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
     
     @property
     def count_successful_interactions(self):
         """Counts the number of Rattlesnakes that consumed a prey."""
-        return sum(snake.prey_consumed for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
+        return sum(snake.behavior_module.prey_consumed for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
 
     ###################################################
     ### Methods
