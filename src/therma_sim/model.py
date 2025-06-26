@@ -176,6 +176,23 @@ class ThermaSim(mesa.Model):
         """Counts the number of Rattlesnakes in brumation."""
         return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
                 if snake.current_behavior == "Brumation")
+    @property
+    def mean_thermal_quality(self):
+        return np.mean([np.abs(snake.t_env - snake.t_opt) for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()])
+
+    @property
+    def mean_thermal_accuracy(self):
+        return np.mean([np.abs(snake.body_temperature - snake.t_opt) for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()])
+    
+    @property
+    def count_interactions(self):
+        """Counts the number of Rattlesnakes that interacted with prey."""
+        return sum(snake.prey_encountered for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
+    
+    @property
+    def count_successful_interactions(self):
+        """Counts the number of Rattlesnakes that consumed a prey."""
+        return sum(snake.prey_consumed for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
 
     ###################################################
     ### Methods
@@ -257,9 +274,11 @@ class ThermaSim(mesa.Model):
         Initiate logger_data_bases
         '''
         rattlesnake_columns = [
-            "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active","Alive", "Behavior", "Microhabitat",
-            "Body_Temperature", "Mass", "Metabolic_State", "Handling_Time",
-            "Attack_Rate", "Prey_Density", "Prey_Encountered", "Prey_Consumed"
+            "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active","Alive",
+            "Behavior", "Microhabitat",
+            "Body_Temperature", 'T_Env', "Mass", "Metabolic_State", 
+            "Handling_Time", "Attack_Rate",
+            "Prey_Density", "Prey_Encountered", "Prey_Consumed"
         ]
         kangaroo_rat_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year","Agent_id","Alive", "Active"
@@ -267,7 +286,10 @@ class ThermaSim(mesa.Model):
         model_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year",
             "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active',
-            'Foraging', 'Thermorgulating', 'Resting', 'Searching', 'Brumating', 'seed', 'sim_id'
+            'Foraging', 'Thermorgulating', 'Resting', 'Searching', 'Brumating',
+            'mean_thermal_quality', 'mean_thermal_accuracy', 
+            'count_interactions', 'count_successful_interactions',
+            'seed', 'sim_id'
         ]
         birth_death_columns = [
             "Time_Step", "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
@@ -298,6 +320,10 @@ class ThermaSim(mesa.Model):
             self.count_rest,
             self.count_search,
             self.count_brumation,
+            self.mean_thermal_quality,
+            self.mean_thermal_accuracy,
+            self.count_interactions,
+            self.count_successful_interactions,
             self.seed,
             self.sim_id
         ]
@@ -414,7 +440,6 @@ class ThermaSim(mesa.Model):
             self.place_agent(agent, pos)
 
         self.schedule.add(agent)
-
 
 
     def initialize_populations_density(self, species, min_density, max_density, spatially_explicit=False):

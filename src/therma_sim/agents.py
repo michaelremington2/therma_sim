@@ -131,6 +131,14 @@ class Rattlesnake(mesa.Agent):
             self._body_temperature = value
 
     @property
+    def t_env(self):
+        return self._t_env
+
+    @t_env.setter
+    def t_env(self, value):
+        self._t_env = value
+
+    @property
     def active(self):
         return self._active
 
@@ -251,6 +259,7 @@ class Rattlesnake(mesa.Agent):
             self.current_behavior,
             self.current_microhabitat,
             self.body_temperature,
+            self.t_env,
             self.mass,
             self.metabolism.metabolic_state,
             self.behavior_module.handling_time,
@@ -387,8 +396,8 @@ class Rattlesnake(mesa.Agent):
         Function to facilitate agents picking a behavior and microhabitat
         '''
         self.behavior_module.step()
-        t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
-        self.update_body_temp(t_env)
+        self.t_env = self.get_t_env(current_microhabitat = self.current_microhabitat)
+        self.update_body_temp(self.t_env)
         self.metabolism.cals_lost(mass=self.mass, temperature=self.body_temperature, activity_coefficient=self.activity_coefficients[self.current_behavior])
 
     def step(self):
