@@ -167,6 +167,7 @@ class EctothermBehavior(object):
         self.snake.current_microhabitat = 'Open'
         self.snake.current_behavior = 'Search'
         self.snake.active = True
+        self.snake.search_counter -= 1
 
     def bruminate(self):
         '''overwintering behavior'''
@@ -222,11 +223,10 @@ class EctothermBehavior(object):
         self.reset_log_metrics()
         if self.snake.is_bruminating_today():
             self.bruminate()
+        elif self.snake.search_counter > 0:
+            self.search()
         elif self.snake.birth_death_module.ct_out_of_bounds_tcounter>0:
             self.thermoregulate()
-        elif self.snake.search_counter > 0:
-            self.snake.search_counter -= 1
-            self.search()
         else:
             behavior = self.choose_behavior()
             behavior_actions = {

@@ -151,7 +151,7 @@ class ThermaSim(mesa.Model):
     def count_foraging(self):
         """Counts the number of Rattlesnakes that are foraging."""
         return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
-                if snake.current_behavior == "Foraging")
+                if snake.current_behavior == "Forage")
     
     @property
     def count_thermoregulate(self):
@@ -286,7 +286,7 @@ class ThermaSim(mesa.Model):
         model_columns = [
             "Time_Step", "Hour", "Day", "Month", "Year",
             "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active',
-            'Foraging', 'Thermorgulating', 'Resting', 'Searching', 'Brumating',
+            'Foraging', 'Thermoregulating', 'Resting', 'Searching', 'Brumating',
             'mean_thermal_quality', 'mean_thermal_accuracy', 
             'count_interactions', 'count_successful_interactions',
             'seed', 'sim_id'
@@ -563,7 +563,7 @@ class ThermaSim(mesa.Model):
         self.month = self.landscape.thermal_profile.select('month').row(self.step_id)[0]
         self.year = self.landscape.thermal_profile.select('year').row(self.step_id)[0]
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
-        self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
+        
         # Krats
         krat_shuffle = self.randomize_krats()
         for krat in krat_shuffle:
@@ -579,8 +579,7 @@ class ThermaSim(mesa.Model):
             snake.step()
             data = None
         snake_shuffle = self.randomize_snakes()
-
-        
+        self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
         self.schedule.step()
