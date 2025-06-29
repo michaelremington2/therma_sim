@@ -384,6 +384,11 @@ class Rattlesnake(mesa.Agent):
     def move(self):
         pass
 
+    def collect_data(self):
+        data = self.report_data()
+        self.model.logger.log_data(file_name = self.model.output_folder+"Rattlesnake.csv", data=data)
+        data = None
+
     def agent_checks(self):
         '''
         Helper function run in the step function to run all functions t hat are binary checks of the individual to manage its state of being active, alive, or giving birth.
@@ -406,6 +411,7 @@ class Rattlesnake(mesa.Agent):
         self.simulate_decision()
         self.birth_death_module.step()
         self.age += 1
+        self.collect_data()
         #self.log_choice(behavior=self.current_behavior, microhabitat=self.current_microhabitat, body_temp=self.body_temperature)
         #print(f'Metabolic State {self.metabolism.metabolic_state}')
         #self.print_history()

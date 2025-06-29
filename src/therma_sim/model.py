@@ -579,26 +579,22 @@ class ThermaSim(mesa.Model):
         self.month = self.landscape.thermal_profile.select('month').row(self.step_id)[0]
         self.year = self.landscape.thermal_profile.select('year').row(self.step_id)[0]
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
+        self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
         
         # Krats
-        krat_shuffle = self.randomize_krats()
-        for krat in krat_shuffle:
-            #self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
-            krat.step()
-        krat_shuffle = self.randomize_krats()
-        # Snakes
-        snake_shuffle = self.randomize_snakes()
-        for snake in snake_shuffle:
-            if self.hour in snake.active_hours and not snake.is_bruminating_today():
-                data = snake.report_data()
-                self.logger.log_data(file_name = self.output_folder+"Rattlesnake.csv", data=data)
-            snake.step()
-            data = None
-        snake_shuffle = self.randomize_snakes()
-        self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
+        # krat_shuffle = self.randomize_krats()
+        # for krat in krat_shuffle:
+        #     #self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
+        #     krat.step()
+        # krat_shuffle = self.randomize_krats()
+        # # Snakes
+        # snake_shuffle = self.randomize_snakes()
+        # for snake in snake_shuffle:
+        #     snake.step()
+        # snake_shuffle = self.randomize_snakes()
+        self.schedule.step()
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
-        self.schedule.step()
         self.end_sim_early_check()
 
 
