@@ -176,6 +176,19 @@ class ThermaSim(mesa.Model):
         """Counts the number of Rattlesnakes in brumation."""
         return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
                 if snake.current_behavior == "Brumation")
+    
+    @property
+    def snakes_in_burrow(self):
+        """Counts the number of Rattlesnakes in brumation."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_microhabitat == "Burrow")
+    
+    @property
+    def snakes_in_open(self):
+        """Counts the number of Rattlesnakes in brumation."""
+        return sum(1 for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()
+                if snake.current_microhabitat == "Open")
+
     @property
     def mean_thermal_quality(self):
         return np.mean([np.abs(snake.t_env - snake.t_opt) for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()])
@@ -287,6 +300,7 @@ class ThermaSim(mesa.Model):
             "Time_Step", "Hour", "Day", "Month", "Year",
             "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active',
             'Foraging', 'Thermoregulating', 'Resting', 'Searching', 'Brumating',
+            'Snakes_in_Burrow', 'Snakes_in_Open',
             'mean_thermal_quality', 'mean_thermal_accuracy', 
             'count_interactions', 'count_successful_interactions',
             'seed', 'sim_id'
@@ -320,6 +334,8 @@ class ThermaSim(mesa.Model):
             self.count_rest,
             self.count_search,
             self.count_brumation,
+            self.snakes_in_burrow,
+            self.snakes_in_open,
             self.mean_thermal_quality,
             self.mean_thermal_accuracy,
             self.count_interactions,
