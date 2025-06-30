@@ -385,9 +385,10 @@ class Rattlesnake(mesa.Agent):
         pass
 
     def collect_data(self):
-        data = self.report_data()
-        self.model.logger.log_data(file_name = self.model.output_folder+"Rattlesnake.csv", data=data)
-        data = None
+        if self.model.hour in self.active_hours and not self.is_bruminating_today():
+            data = self.report_data()
+            self.model.logger.log_data(file_name = self.model.output_folder+"Rattlesnake.csv", data=data)
+            data = None
 
     def agent_checks(self):
         '''
