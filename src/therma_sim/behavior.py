@@ -3,6 +3,33 @@ import ThermaNewt.sim_snake_tb as tn
 from numba import njit
 from scipy.special import softmax
 
+def sparsemax(z):
+    """
+    Sparsemax: projects input vector z onto probability simplex with possible sparsity.
+    Assumes z is a 1D array scaled to reasonable range (e.g., [0,1]).
+    """
+    z = np.asarray(z, dtype=np.float64)
+
+    # Sort z in descending order
+    z_sorted = np.sort(z)[::-1]
+    k = np.arange(1, len(z) + 1)  # 1-based indexing for algorithm
+    
+    # Determine k_max: largest k where threshold holds
+    z_cumsum = np.cumsum(z_sorted)
+    condition = 1 + k * z_sorted > z_cumsum
+    if not np.any(condition):
+        # fallback: uniform distribution if no support found
+        return np.ones_like(z) / len(z)
+    k_z = k[condition][-1]
+    
+    # Compute threshold tau
+    tau_z = (z_cumsum[k_z - 1] - 1) / k_z
+
+    # Compute projection onto simplex
+    p = np.maximum(z - tau_z, 0)
+    p /= p.sum()  # ensure probabilities sum to 1 for numerical stability
+    return p
+
 class EctothermBehavior(object):
     def __init__(self, snake):
         self.snake = snake
@@ -207,15 +234,28 @@ class EctothermBehavior(object):
             forage_utility = 0
         return np.array([rest_utility, thermoregulate_utility, forage_utility])
     
-    def set_behavioral_weights(self,utl_temperature=1.0):
+    # Changing from softmax to sparsemax for behavioral weights
+    # def set_behavioral_weights(self,utl_temperature=1.0):
+    #     utilities = self.set_utilities()
+    #     if np.allclose(utilities, 0):
+    #         return np.ones_like(utilities) / len(utilities)  # Avoid divide-by-zero
+    #     masked_utilities = np.where(utilities == 0, -np.inf, utilities)
+    #     return softmax(masked_utilities / utl_temperature)
+
+        # def choose_behavior(self):
+    #     behavior_probabilities = self.set_behavioral_weights(utl_temperature=self.snake.utility_temperature)
+    #     return np.random.choice(self.snake.emergent_behaviors, p=behavior_probabilities)
+
+    def set_behavioral_weights(self):
+        '''Calculate sparsemax-based probabilities for behavior selection'''
         utilities = self.set_utilities()
         if np.allclose(utilities, 0):
             return np.ones_like(utilities) / len(utilities)  # Avoid divide-by-zero
-        masked_utilities = np.where(utilities == 0, -np.inf, utilities)
-        return softmax(masked_utilities / utl_temperature)
-        
+        return sparsemax(utilities)
+    
     def choose_behavior(self):
-        behavior_probabilities = self.set_behavioral_weights(utl_temperature=self.snake.utility_temperature)
+        '''Choose a behavior stochastically from sparsemax probabilities'''
+        behavior_probabilities = self.set_behavioral_weights()
         return np.random.choice(self.snake.emergent_behaviors, p=behavior_probabilities)
 
     def step(self):
