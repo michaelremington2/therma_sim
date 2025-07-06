@@ -298,7 +298,7 @@ class Rattlesnake(mesa.Agent):
     #     else:
     #         raise ValueError(f"Unsupported distribution: {dist}")
 
-        return mass
+    #    return mass
 
 
     def generate_random_pos(self):
