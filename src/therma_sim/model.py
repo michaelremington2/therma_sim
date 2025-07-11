@@ -560,13 +560,13 @@ class ThermaSim(mesa.Model):
         snakes = self.rattlesnake_pop_size
         krats = self.krats_pop_size
         total_agents = snakes + krats
-        if total_agents > 10000:
-           self.running=False
-        elif krats==0:
+        if krats==0:
             self.running=False
+            raise RuntimeError('Simulation ended early, no Kangaroo Rats left')
         elif snakes==0:
             self.running=False
-        elif total_agents>21000:
+            raise RuntimeError('Simulation ended early, no snakes left')
+        elif total_agents>30000:
             raise RuntimeError('Simulation didnt stop')
 
     def step(self):
