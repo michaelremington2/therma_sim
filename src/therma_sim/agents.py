@@ -22,7 +22,7 @@ class Rattlesnake(mesa.Agent):
     Agent Class for rattlesnake predator agents.
         Rattlsnakes are sit and wait predators that forage on kangaroo rat agents
     '''
-    def __init__(self, unique_id, model, mass,  hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, mass,  hourly_survival_probability = 1, age=0, initial_pop=False, initial_pos=None, config=None,report_agent_data=False):
         super().__init__(unique_id, model)
         self.initial_pop = initial_pop
         self.pos = initial_pos
@@ -30,6 +30,7 @@ class Rattlesnake(mesa.Agent):
         self.sex = np.random.choice(['Male', 'Female'], 1)[0]
         self.age = age
         self.mass = mass
+        self.report_agent_data = report_agent_data
         if config is not None:
             self.metabolism = metabolism.EctothermMetabolism(org=self,
                                                              model=self.model,
@@ -385,7 +386,7 @@ class Rattlesnake(mesa.Agent):
         pass
 
     def collect_data(self):
-        if self.model.hour in self.active_hours and not self.is_bruminating_today():
+        if self.report_agent_data:
             data = self.report_data()
             self.model.logger.log_data(file_name = self.model.output_folder+"Rattlesnake.csv", data=data)
             data = None
@@ -424,7 +425,7 @@ class KangarooRat(mesa.Agent):
       A kangaroo rat agent is one that is at the bottom of the trophic level and only gains energy through foraging from the 
     seed patch class.
     '''
-    def __init__(self, unique_id, model, mass, hourly_survival_probability,  age=0, initial_pop=False, initial_pos=None, config=None):
+    def __init__(self, unique_id, model, mass, hourly_survival_probability,  age=0, initial_pop=False, initial_pos=None, config=None,report_agent_data=False):
         super().__init__(unique_id, model)
         self.initial_pop = initial_pop
         self.pos = initial_pos

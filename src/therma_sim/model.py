@@ -35,7 +35,7 @@ class ThermaSim(mesa.Model):
     '''
     A model class to mange the kangaroorat, rattlesnake predator-prey interactions
     '''
-    def __init__(self, config, seed=42, _test=False, output_folder=None,sim_id=None):
+    def __init__(self, config, seed=42, snake_sample_frequency=None, _test=False, output_folder=None,sim_id=None, print_progress=False):
         super().__init__()
         self.running = True
         self.config = config
@@ -43,6 +43,7 @@ class ThermaSim(mesa.Model):
         self.step_id = 0
         self.seed = seed
         self.sim_id = sim_id
+        self.print_progress = print_progress
 
         self._hour = None
         self._day = None
@@ -52,13 +53,15 @@ class ThermaSim(mesa.Model):
         self._initial_mean_densities = {}  # backing dict for initial densities
         if seed is not None:
             np.random.seed(self.seed)
+        self.snake_sample_frequency = snake_sample_frequency
+        if self.snake_sample_frequency is not None:
+            self.sampled_snake_ids = set()
         if output_folder is not None:
             os.makedirs(output_folder, exist_ok=True)
             self.output_folder = output_folder
         else:
             self.output_folder = ''
                 
-        
         # Schedular 
         # Random activation, random by type Simultanious, staged
         self.schedule = mesa.time.RandomActivationByType(self)
@@ -429,11 +432,6 @@ class ThermaSim(mesa.Model):
             mass = self.set_mass(params["body_size_config"])
         else:
             mass = params["body_size_config"]
-                                
-        # if isinstance(params.get("initial_calories"), dict):
-        #     initial_calories = np.random.choice(range(params["initial_calories"]['start'], params["initial_calories"]['stop'], params["initial_calories"]['step']))
-        # else:
-        #     initial_calories = params["initial_calories"]
 
         if "annual_survival_probability" in params:
             hourly_survival_probaility = ThermaSim.bernouli_trial_hourly(
@@ -441,7 +439,10 @@ class ThermaSim(mesa.Model):
                 steps_per_year=self.steps_per_year
             )
         age = int(np.random.uniform(0, params['max_age'] * self.steps_per_year)) if initial_pop else 0
-
+        if self.snake_sample_frequency is not None and species_name == "Rattlesnake" and len(self.sampled_snake_ids) < self.snake_sample_frequency:
+            report_agent_data = True
+        else:
+            report_agent_data = False
         agent = agent_class(
             unique_id=self.next_id(),
             model=self,
@@ -449,12 +450,11 @@ class ThermaSim(mesa.Model):
             mass=mass,
             hourly_survival_probability=hourly_survival_probaility,
             config=params,
-            initial_pop=initial_pop
+            initial_pop=initial_pop,
+            report_agent_data=report_agent_data
         )
-
-        if pos is not None:
-            self.place_agent(agent, pos)
-
+        if report_agent_data:
+            self.sampled_snake_ids.add(agent.unique_id)
         self.schedule.add(agent)
 
 
@@ -554,6 +554,8 @@ class ThermaSim(mesa.Model):
         for agent in list(self.schedule.agents_by_type[agents.Rattlesnake].values()) + \
                       list(self.schedule.agents_by_type[agents.KangarooRat].values()):
             if not agent.alive:
+                if agent.species_name == "Rattlesnake" and agent.unique_id in self.sampled_snake_ids:
+                    self.sampled_snake_ids.remove(agent.unique_id)
                 self.remove_agent(agent)
 
     def end_sim_early_check(self):
@@ -600,7 +602,7 @@ class ThermaSim(mesa.Model):
 
     def run_model(self, step_count=None):
         max_steps = len(self.landscape.thermal_profile)-1
-        print(f'Site: {self.landscape.site_name}, Simulation ID: {self.sim_id}, Seed: {self.seed}')
+        print(f'Site: {self.landscape.site_name}, Simulation ID: {self.sim_id}, Seed: {self.seed}, sampling_snakes {self.snake_sample_frequency}, Steps: {max_steps}')
         if step_count is None:
             step_count = max_steps
         elif max_steps <= step_count:
