@@ -607,7 +607,7 @@ class ThermaSim(mesa.Model):
                 break
             end_time= time.time()
             execution_time = end_time - start_time
-            print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {round(execution_time,2)}, sss {len(self.sampled_snake_ids)}')
+            # print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {round(execution_time,2)}, sss {len(self.sampled_snake_ids)}')
 
             
 
