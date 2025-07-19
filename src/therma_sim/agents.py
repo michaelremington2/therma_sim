@@ -364,12 +364,13 @@ class Rattlesnake(mesa.Agent):
         '''
         Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
         '''
-        self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
-        if self.alive == False:
+        stay_alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
+        if stay_alive == False:
+            self.alive = False
             self.cause_of_death = 'Random'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
                             data=self.birth_death_module.report_data(event_type='Death'))
-            self.model.remove_agent(self)
+            #self.model.remove_agent(self)
     
     def is_starved(self):
         '''
@@ -377,10 +378,10 @@ class Rattlesnake(mesa.Agent):
         '''
         if self.metabolism.metabolic_state<=0:
             self.alive = False
-            self.cause_of_death = 'starved'
+            self.cause_of_death = 'Starved'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
                                        data=self.birth_death_module.report_data(event_type='Death'))
-            self.model.remove_agent(self)
+            #self.model.remove_agent(self)
 
     def move(self):
         pass
@@ -550,11 +551,14 @@ class KangarooRat(mesa.Agent):
         '''
         Helper function - represents a background death rate from other preditors, disease, vicious cars, etc
         '''
-        self.alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
-        if not self.alive:
+        stay_alive = np.random.choice([True, False], p=[self.hourly_survival_probability, 1 - self.hourly_survival_probability])
+        if stay_alive == False:
+            self.alive = False
             self.cause_of_death = 'Random'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
                             data=self.birth_death_module.report_data(event_type='Death'))
+            #self.model.remove_agent(self)
+    
 
     def initiate_birth_death_module(self, birth_config, initial_pop):
         '''

@@ -309,7 +309,8 @@ class ThermaSim(mesa.Model):
             'seed', 'sim_id'
         ]
         birth_death_columns = [
-            "Time_Step", "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
+            "Time_Step","Hour", "Day", "Month", "Year",
+            "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
             "Death_Counter", "Alive", "Event_Type", "Cause_Of_Death", "Litter_Size",
             "Body_Temperature", 'ct_min', 'ct_max'
         ]
@@ -439,7 +440,7 @@ class ThermaSim(mesa.Model):
                 steps_per_year=self.steps_per_year
             )
         age = int(np.random.uniform(0, params['max_age'] * self.steps_per_year)) if initial_pop else 0
-        if self.snake_sample_frequency is not None and species_name == "Rattlesnake" and len(self.sampled_snake_ids) < self.snake_sample_frequency:
+        if self.snake_sample_frequency is not None and species_name == "Rattlesnake" and len(self.sampled_snake_ids) < self.snake_sample_frequency and age==0:
             report_agent_data = True
         else:
             report_agent_data = False
@@ -556,6 +557,7 @@ class ThermaSim(mesa.Model):
             if not agent.alive:
                 if agent.species_name == "Rattlesnake" and agent.unique_id in self.sampled_snake_ids:
                     self.sampled_snake_ids.remove(agent.unique_id)
+                    print('Removed dead snake from sampled ids:', agent.unique_id)
                 self.remove_agent(agent)
 
     def end_sim_early_check(self):
@@ -576,24 +578,11 @@ class ThermaSim(mesa.Model):
         Main model step function used to run one step of the model.
         '''
         self.hour = self.landscape.thermal_profile.select("hour").row(self.step_id)[0]
-
         self.day = self.landscape.thermal_profile.select('day').row(self.step_id)[0]
         self.month = self.landscape.thermal_profile.select('month').row(self.step_id)[0]
         self.year = self.landscape.thermal_profile.select('year').row(self.step_id)[0]
         self.landscape.set_landscape_temperatures(step_id=self.step_id)
         self.logger.log_data(file_name = self.output_folder+"Model.csv", data=self.report_data())
-        
-        # Krats
-        # krat_shuffle = self.randomize_krats()
-        # for krat in krat_shuffle:
-        #     #self.logger.log_data(file_name = self.output_folder+"KangarooRat.csv", data=krat.report_data())
-        #     krat.step()
-        # krat_shuffle = self.randomize_krats()
-        # # Snakes
-        # snake_shuffle = self.randomize_snakes()
-        # for snake in snake_shuffle:
-        #     snake.step()
-        # snake_shuffle = self.randomize_snakes()
         self.schedule.step()
         self.remove_dead_agents()
         self.step_id += 1  # Increment the step counter
@@ -617,7 +606,7 @@ class ThermaSim(mesa.Model):
                 break
             end_time= time.time()
             execution_time = end_time - start_time
-            print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {execution_time}')
+            print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {round(execution_time,2)}, sss {len(self.sampled_snake_ids)}')
 
             
 

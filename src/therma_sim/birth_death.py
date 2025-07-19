@@ -119,6 +119,10 @@ class Birth_Death_Module(object):
 
         return [
             self.model.step_id,
+            self.model.hour, 
+            self.model.day, 
+            self.model.month, 
+            self.model.year,
             self.agent.unique_id,
             self.agent.species_name, 
             self.agent.age,
@@ -192,13 +196,13 @@ class Birth_Death_Module(object):
             self.agent.alive = False
             self.agent.cause_of_death = 'Frozen'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
-            self.model.remove_agent(self.agent)
+            #self.model.remove_agent(self.agent)
             return
         elif self.agent.body_temperature > self.agent.ct_max:
             self.agent.alive = False
             self.agent.cause_of_death = 'Cooked'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
-            self.model.remove_agent(self.agent)
+            #self.model.remove_agent(self.agent)
             return
             
 
@@ -215,7 +219,7 @@ class Birth_Death_Module(object):
             self.agent.alive = False
             self.agent.cause_of_death = 'old_age'
             self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv", data=self.report_data(event_type='Death'))
-            self.model.remove_agent(self.agent)
+            #self.model.remove_agent(self.agent)
             return  # Stop processing if the agent dies
 
         # If birth happens before death, process birth
