@@ -255,6 +255,7 @@ class Rattlesnake(mesa.Agent):
             self.model.day,
             self.model.month,
             self.model.year,
+            self.model.landscape.site_name,
             self.unique_id,
             self.active,
             self.alive,

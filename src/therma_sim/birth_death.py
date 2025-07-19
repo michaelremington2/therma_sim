@@ -123,6 +123,7 @@ class Birth_Death_Module(object):
             self.model.day, 
             self.model.month, 
             self.model.year,
+            self.model.landscape.site_name,
             self.agent.unique_id,
             self.agent.species_name, 
             self.agent.age,

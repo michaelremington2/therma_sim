@@ -290,7 +290,7 @@ class ThermaSim(mesa.Model):
         Initiate logger_data_bases
         '''
         rattlesnake_columns = [
-            "Time_Step","Hour", "Day", "Month", "Year", "Agent_id", "Active","Alive",
+            "Time_Step","Hour", "Day", "Month", "Year", "Site_Name", "Agent_id", "Active","Alive",
             "Behavior", "Microhabitat",
             "Body_Temperature", 'T_Env', "Mass", "Metabolic_State", 
             "Handling_Time", "Attack_Rate",
@@ -300,7 +300,7 @@ class ThermaSim(mesa.Model):
             "Time_Step", "Hour", "Day", "Month", "Year","Agent_id","Alive", "Active"
         ]
         model_columns = [
-            "Time_Step", "Hour", "Day", "Month", "Year",
+            "Time_Step", "Hour", "Day", "Month", "Year", "Site_Name",
             "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active',
             'Foraging', 'Thermoregulating', 'Resting', 'Searching', 'Brumating',
             'Snakes_in_Burrow', 'Snakes_in_Open',
@@ -309,7 +309,7 @@ class ThermaSim(mesa.Model):
             'seed', 'sim_id'
         ]
         birth_death_columns = [
-            "Time_Step","Hour", "Day", "Month", "Year",
+            "Time_Step","Hour", "Day", "Month", "Year", "Site_Name",
             "Agent_id","Species", "Age", "Sex", "Mass", "Birth_Counter",
             "Death_Counter", "Alive", "Event_Type", "Cause_Of_Death", "Litter_Size",
             "Body_Temperature", 'ct_min', 'ct_max'
@@ -327,6 +327,7 @@ class ThermaSim(mesa.Model):
             self.day,
             self.month,
             self.year,
+            self.landscape.site_name,
             self.rattlesnake_pop_size,
             self.krats_pop_size,
             round(self.rattlesnake_mean_density, 2),
