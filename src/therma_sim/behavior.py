@@ -134,14 +134,6 @@ class EctothermBehavior(object):
 
         predator_label = self.snake.species_name
         prey_label = self.model.interaction_map.get_prey_for_predator(predator_label=predator_label)[0]
-
-        # prey_min_density, prey_max_density = self.model.get_population_densities(species=prey_label)
-        # active_prey_population_size = 
-        # prey_density = self.model.calc_local_population_density(
-        #     population_size=active_prey_population_size,
-        #     middle_range=prey_min_density,
-        #     max_density=prey_max_density
-        # )
         self.prey_density = self.model.active_krats_count / self.model.landscape.landscape_size
 
         # Attack rate
@@ -160,27 +152,22 @@ class EctothermBehavior(object):
             handling_time = handling_time_range['min']
         self.handling_time = handling_time
 
-        # switched to using holling 2 function for just encounter rate 03/16`
-        expected_prey_encountered = self.holling_type_2(self.prey_density,  attack_rate, handling_time)
-        prey_encountered = int(np.random.poisson(expected_prey_encountered))
+        # switched to using holling 2 function for just consumption rate`
+        prey_encountered = self.holling_type_2(self.prey_density,  attack_rate, handling_time, strike_success=self.snake.strike_performance_opt)
         self.prey_encountered = prey_encountered
-        prey_consumed = 0 
-        if prey_encountered> 0 and self.model.active_krats_count >= prey_encountered:
-#            for _ in range(prey_encountered): removing this with the assumption only one kangaroo rat encounter per time
-            strike_check = np.random.rand()
-            if strike_check < self.snake.strike_performance_opt:
-                prey = self.model.get_active_krat()
-                cal_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey.species_name)
-                digestion_efficiency = self.model.interaction_map.get_digestion_efficiency(predator=predator_label, prey=prey.species_name)
-                self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
-                prey.alive = False
-                prey.cause_of_death = 'predation'
-                self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
-                                            data=prey.birth_death_module.report_data(event_type='Death'))
-                if self.snake.searching_behavior:
-                    self.snake.search_counter = handling_time
-                self.model.remove_agent(prey)
-                prey_consumed +=1
+        prey_consumed = int(np.random.poisson(prey_encountered)) 
+        if prey_consumed> 0 and self.model.active_krats_count >= prey_encountered:
+            prey = self.model.get_active_krat()
+            cal_per_gram = self.model.interaction_map.get_calories_per_gram(predator=predator_label, prey=prey.species_name)
+            digestion_efficiency = self.model.interaction_map.get_digestion_efficiency(predator=predator_label, prey=prey.species_name)
+            self.snake.metabolism.cals_gained(prey.mass, cal_per_gram, digestion_efficiency)
+            prey.alive = False
+            prey.cause_of_death = 'predation'
+            self.model.logger.log_data(file_name = self.model.output_folder+"BirthDeath.csv",
+                                        data=prey.birth_death_module.report_data(event_type='Death'))
+            if self.snake.searching_behavior:
+                self.snake.search_counter = handling_time
+            self.model.remove_agent(prey)
         self.prey_consumed = prey_consumed
 
     def rest(self):
