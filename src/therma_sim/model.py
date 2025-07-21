@@ -558,7 +558,7 @@ class ThermaSim(mesa.Model):
             if not agent.alive:
                 if agent.species_name == "Rattlesnake" and agent.unique_id in self.sampled_snake_ids:
                     self.sampled_snake_ids.remove(agent.unique_id)
-                    print('Removed dead snake from sampled ids:', agent.unique_id)
+                    #print('Removed dead snake from sampled ids:', agent.unique_id)
                 self.remove_agent(agent)
 
     def end_sim_early_check(self):
@@ -607,7 +607,8 @@ class ThermaSim(mesa.Model):
                 break
             end_time= time.time()
             execution_time = end_time - start_time
-            # print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {round(execution_time,2)}, sss {len(self.sampled_snake_ids)}')
+            if self.print_progress:
+                print(f'Step {self.step_id},hour {self.hour}, date {self.month}/{self.day}/{self.year} - snakes {self.rattlesnake_pop_size} active {self.active_snakes_count}, krats {self.krats_pop_size} active {self.active_krats_count}, time_to_run_step {round(execution_time,2)}, sss {len(self.sampled_snake_ids)}')
 
             
 

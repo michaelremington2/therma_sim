@@ -40,6 +40,7 @@ def main():
     parser.add_argument("--output", type=str, default="", help="Directory to save output files.")
     parser.add_argument("--sim_id", type=str, default="", help="ID label for simulation.")
     parser.add_argument("--snake_sample_frequency", type=int, default=0, help="Frequency of snake sampling (0 for no sampling).")
+    parser.add_argument("--print_progress", action='store_true', help="Print progress to console during simulation.")
     args = parser.parse_args()
 
     # Load configuration
@@ -62,7 +63,7 @@ def main():
 
     try:
         start_time = time.time()
-        model = ThermaSim(config=config, seed=args.seed, output_folder=args.output, sim_id=args.sim_id,snake_sample_frequency=args.snake_sample_frequency)
+        model = ThermaSim(config=config, seed=args.seed, output_folder=args.output, sim_id=args.sim_id,snake_sample_frequency=args.snake_sample_frequency, print_progress=args.print_progress)
         model.run_model(step_count=args.steps)
         run_time = time.time() - start_time
         logger.info(f"Simulation completed successfully in {run_time:.2f} seconds.")
