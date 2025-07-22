@@ -90,7 +90,7 @@ class Rattlesnake(mesa.Agent):
         self.activity_coefficients = self.snake_config['behavior_activity_coefficients']
 
         # Microhabitat
-        self._current_microhabitat = ''
+        self._current_microhabitat = 'Burrow'
         # self.microhabitat_history = []
         # self.body_temp_history = []
 

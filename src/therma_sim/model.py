@@ -201,6 +201,10 @@ class ThermaSim(mesa.Model):
         return np.mean([np.abs(snake.body_temperature - snake.t_opt) for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()])
     
     @property
+    def mean_metabolic_state(self):
+        return np.mean([snake.metabolism.metabolic_state for snake in self.schedule.agents_by_type[agents.Rattlesnake].values()])
+    
+    @property
     def count_interactions(self):
         """Counts the number of Rattlesnakes that interacted with prey."""
         return sum(snake.behavior_module.prey_encountered for snake in self.schedule.agents_by_type[agents.Rattlesnake].values())
@@ -304,7 +308,7 @@ class ThermaSim(mesa.Model):
             "Rattlesnakes", "Krats", "Rattlesnakes_Density", "Krats_Density", 'Rattlesnakes_Active', 'Krats_Active',
             'Foraging', 'Thermoregulating', 'Resting', 'Searching', 'Brumating',
             'Snakes_in_Burrow', 'Snakes_in_Open',
-            'mean_thermal_quality', 'mean_thermal_accuracy', 
+            'mean_thermal_quality', 'mean_thermal_accuracy', 'mean_metabolic_state',
             'count_interactions', 'count_successful_interactions',
             'seed', 'sim_id'
         ]
@@ -343,6 +347,7 @@ class ThermaSim(mesa.Model):
             self.snakes_in_open,
             self.mean_thermal_quality,
             self.mean_thermal_accuracy,
+            self.mean_metabolic_state,
             self.count_interactions,
             self.count_successful_interactions,
             self.seed,

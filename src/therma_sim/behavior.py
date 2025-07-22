@@ -1,7 +1,8 @@
 import numpy as np
-import ThermaNewt.sim_snake_tb as tn
+#import ThermaNewt.sim_snake_tb as tn
 from numba import njit
 from scipy.special import softmax
+from math import isclose
 
 def sparsemax(z):
     """
@@ -34,10 +35,10 @@ class EctothermBehavior(object):
     def __init__(self, snake):
         self.snake = snake
         self.model = self.snake.model
-        self.thermoregulation_module = tn.ThermalSimulator(flip_logic='preferred',
-                                                           t_pref_min=self.snake.t_pref_min,
-                                                           t_pref_max=self.snake.t_pref_max,
-                                                           t_pref_opt=self.snake.t_opt)
+        # self.thermoregulation_module = tn.ThermalSimulator(flip_logic='preferred',
+        #                                                    t_pref_min=self.snake.t_pref_min,
+        #                                                    t_pref_max=self.snake.t_pref_max,
+        #                                                    t_pref_opt=self.snake.t_opt)
         self._log_prey_density = 0  
         self._log_attack_rate = 0  
         self._log_handling_time = 0 
@@ -190,21 +191,61 @@ class EctothermBehavior(object):
         self.snake.body_temperature = self.snake.brumation_temp
         self.snake.active = False
 
+    ## Thermoregulation calculation
+    def calc_prob_preferred_topt(self, t_body, t_pref_opt, t_pref_max, t_pref_min):
+        if t_body >= t_pref_opt:
+            prob_flip = ((t_body - t_pref_opt) / (t_pref_max - t_pref_opt))
+        elif t_body < t_pref_opt:
+            prob_flip = ((t_pref_opt - t_body) / (t_pref_opt - t_pref_min))
+        else:
+            raise ValueError("Something is messed up")
+        if prob_flip > 1:
+            prob_flip = 1
+        return prob_flip
+
+    def best_habitat_t_opt(self, t_body,burrow_temp, open_temp):
+        if t_body > self.snake.t_opt and burrow_temp < open_temp:
+            flip_direction = 'Burrow'
+        elif t_body < self.snake.t_opt and burrow_temp > open_temp:
+            flip_direction = 'Burrow'
+        else:
+            flip_direction = 'Open'
+        return flip_direction
+    
+    def preferred_topt(self, t_body, burrow_temp, open_temp):
+        """Determines if the snake should switch microhabitats based on preferred temperatures."""
+        
+        # Calculate the probability of flipping microhabitats based on the snake's body temperature.
+        prob_flip = self.calc_prob_preferred_topt(
+            t_body=t_body,
+            t_pref_opt=self.snake.t_opt,
+            t_pref_max=self.snake.t_pref_max, 
+            t_pref_min=self.snake.t_pref_min
+        )  
+
+        # If the body temperature is nearly optimal OR the two microhabitat temperatures are nearly equal,
+        # retain the current state (or randomly choose if not set).
+        if isclose(t_body, self.snake.t_opt, abs_tol=0.01) or isclose(burrow_temp, open_temp, abs_tol=0.01):
+            return self.snake.current_microhabitat
+
+        # Decide to flip microhabitats based on a random draw and the calculated probability.
+        if np.random.random() <= prob_flip:
+            bu = self.best_habitat_t_opt(t_body = t_body, burrow_temp=burrow_temp, open_temp=open_temp)
+            return bu
+        else: 
+            return self.snake.current_microhabitat
+
+
     def thermoregulate(self):
-        '''Thermoregulation behavior using ThermaNewt'''
+        '''Thermoregulation behavior based on preferred sub module'''
         self.snake.current_behavior = 'Thermoregulate'
         self.snake.active = True
-        mh = self.thermoregulation_module.do_i_flip(
+        mh = self.preferred_topt(
             t_body=self.snake.body_temperature,
             burrow_temp=self.snake.model.landscape.burrow_temperature,
             open_temp=self.snake.model.landscape.open_temperature
         )
-        if mh == 'In':
-            self.snake.current_microhabitat = 'Burrow'
-        elif mh == 'Out':
-            self.snake.current_microhabitat = 'Open'
-        else:
-            raise ValueError(f"Microhabitat: {mh} has not been programmed into the system")
+        self.snake.current_microhabitat = mh
         
     # Behavioral Algorithm
     def set_utilities(self):
