@@ -441,7 +441,7 @@ class ThermaSim(mesa.Model):
             raise ValueError(f"Unknown species: {species_name}")
         krat_carrying_capacity = self.get_population_carrying_capacity(species_name)
 
-        if krat_carrying_capacity is not None and self.krats_pop_size >= krat_carrying_capacity and species_name == "KangarooRat":
+        if not initial_pop and krat_carrying_capacity is not None and self.krats_pop_size >= krat_carrying_capacity and species_name == "KangarooRat":
             return
         # Set range variables
         else:
