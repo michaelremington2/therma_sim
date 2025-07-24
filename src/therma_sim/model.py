@@ -246,6 +246,11 @@ class ThermaSim(mesa.Model):
         params = self.initial_agents_dictionary.get(species, {})
         return params.get("Initial_Population")
     
+    def get_population_carrying_capacity(self, species):
+        """Retrieve the carrying capacity for a given species, if available."""
+        params = self.initial_agents_dictionary.get(species, {})
+        return params.get("Carrying_Capacity", None)
+    
     def make_initial_population(self):
         total_area = self.landscape.landscape_size  # Get the total area in hectares
         for species, params in self.initial_agents_dictionary.items():
@@ -434,35 +439,40 @@ class ThermaSim(mesa.Model):
             params = self.get_rattlesnake_params()
         else:
             raise ValueError(f"Unknown species: {species_name}")
-        # Set range variables
-        if isinstance(params.get("body_size_config"), dict):
-            mass = self.set_mass(params["body_size_config"])
-        else:
-            mass = params["body_size_config"]
+        krat_carrying_capacity = self.get_population_carrying_capacity(species_name)
 
-        if "annual_survival_probability" in params:
-            hourly_survival_probaility = ThermaSim.bernouli_trial_hourly(
-                annual_probability=params["annual_survival_probability"],
-                steps_per_year=self.steps_per_year
-            )
-        age = int(np.random.uniform(0, params['max_age'] * self.steps_per_year)) if initial_pop else 0
-        if self.snake_sample_frequency is not None and species_name == "Rattlesnake" and len(self.sampled_snake_ids) < self.snake_sample_frequency and age==0:
-            report_agent_data = True
+        if krat_carrying_capacity is not None and self.krats_pop_size >= krat_carrying_capacity and species_name == "KangarooRat":
+            return
+        # Set range variables
         else:
-            report_agent_data = False
-        agent = agent_class(
-            unique_id=self.next_id(),
-            model=self,
-            age=age,
-            mass=mass,
-            hourly_survival_probability=hourly_survival_probaility,
-            config=params,
-            initial_pop=initial_pop,
-            report_agent_data=report_agent_data
-        )
-        if report_agent_data:
-            self.sampled_snake_ids.add(agent.unique_id)
-        self.schedule.add(agent)
+            if isinstance(params.get("body_size_config"), dict):
+                mass = self.set_mass(params["body_size_config"])
+            else:
+                mass = params["body_size_config"]
+
+            if "annual_survival_probability" in params:
+                hourly_survival_probaility = ThermaSim.bernouli_trial_hourly(
+                    annual_probability=params["annual_survival_probability"],
+                    steps_per_year=self.steps_per_year
+                )
+            age = int(np.random.uniform(0, params['max_age'] * self.steps_per_year)) if initial_pop else 0
+            if self.snake_sample_frequency is not None and species_name == "Rattlesnake" and len(self.sampled_snake_ids) < self.snake_sample_frequency and age==0:
+                report_agent_data = True
+            else:
+                report_agent_data = False
+            agent = agent_class(
+                unique_id=self.next_id(),
+                model=self,
+                age=age,
+                mass=mass,
+                hourly_survival_probability=hourly_survival_probaility,
+                config=params,
+                initial_pop=initial_pop,
+                report_agent_data=report_agent_data
+            )
+            if report_agent_data:
+                self.sampled_snake_ids.add(agent.unique_id)
+            self.schedule.add(agent)
 
 
     def initialize_populations_density(self, species, min_density, max_density, spatially_explicit=False):
